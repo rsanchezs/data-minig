@@ -1,0 +1,522 @@
+---
+output:
+  word_document:
+    highlight: zenburn
+    reference_docx: word-styles-reference-16.docx
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercicis
+
+## Exercici 1
+
+
+Explica el concepte de transformació de valors i dona tres exemple on es vegi la seva utilitat.
+
+Per __transformació de valors__ entenem modificacions dins el tipus de valors
+que poden prendre tots o alguns del atributs.
+
+Les operacions més habituals són la __normalització__ i la __discretització__ de dades.
+Existeixen varies tècniques per a la transformació de dades, passem a examinar tres de
+les més importants. Considerarem $X$ com al valor original del atribut i ${ X }^{ * }$ com al
+valor del atribut normalitzat.
+
+### Normalització per la diferència
+
+La normalització per la diferència tracta de compensar l´efecte de la distància
+del valor que tractem respecte al màxim dels valors observats. Es a dir,
+
+$${ X }^{ * }\quad =\quad \frac { X\quad -\quad min(X) }{ rango(X) } =\quad \frac { X\quad -\quad min(X) }{ max(x)\quad -\quad min(x) }$$ 
+
+__Exemple de normalització per la diferència__
+
+Per a il·lustrar aquesta tècnica utilitzarem el conjunt de dades `cars`[^1]del següent
+llibre _"Data Mining and Predictive Analytics"_[^2]:
+
+
+
+```{r eval=FALSE, warning=FALSE, message=FALSE}
+
+## Carregem les dades
+library(readr)
+cars <- read_csv("data/cars.txt")
+```
+
+[^1]: Conjunt de dades disponibles en http://www.dataminingconsultant.com
+[^2]: Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+## Carregem les dades
+library(readr)
+cars <- read_csv("data/cars.txt")
+```
+
+
+Al  següent fragment presentem un resum estadístic de la variable `weightlbs`:
+
+```{r}
+## Resum estadístic variable `weight`
+summary(cars$weightlbs)
+```
+
+Trobem els valors màxim i mínim de la variable `weightlbs`:
+
+```{r}
+## Trobem els valors mínim i màxim de la variable `weight`
+valor_min <- min(cars$weightlbs)
+valor_max <- max(cars$weightlbs)
+```
+
+Finalment, trobem el valor normalitzat de la variable `weightlbs`:
+
+```{r}
+## Valor normalitzat mitjançant la tècnica de la diferència
+valors_norm_dif <- (cars$weightlbs - valor_min)/(valor_max - valor_min)
+head(valors_norm_dif)
+```
+
+
+### Escalat decimal
+
+La tècnica del __escalat decimal__ ens garanteix que tots els valors normalitzats
+estiguin entre -1 i 1.
+
+$${ X }_{ decimal }^{ * }\quad =\quad \frac { X }{ { 10 }^{ d } }$$
+
+on $d$ representa el nombre de dígits del valor de la dada amb el valor absolut 
+més gran.
+
+__Exemple de normalització decimal__
+
+Per a explicar aquesta tècnica seguirem treballant amb el conjunt de dades `cars`
+de l´exemple anterior:
+
+```{r}
+## Calculem el valor de decimals
+max(abs(cars$weightlbs))
+```
+
+Un cop calculat el nombre de dígits ($d$), ens trobem amb condicions de transformar
+els valors de la variable `weight`:
+
+```{r}
+## Valors transformats amb la tècnica decimal
+valors_norm_dec <- cars$weightlbs/10^4
+head(valors_norm_dec)
+```
+
+### Normalització basada en la desviació estàndard: estandardització de valors {#norm-sd}
+
+El __mètode d´estandardització de valors__ assegura que s´obtenen valors dins el
+rang escollit que tenen la propietat que la seva mitjana és zero i la seva desviació
+estàndard val 1.
+
+Es a dir, l´estandardització consisteix en la diferència entre el valor de l´atribut i la seva mitjana, dividint aquesta diferència per la desviació estàndard dels valors de l´atribut. Es a dir:
+
+$$Z-score\quad =\quad \frac { X\quad -\quad mean(X) }{ SD(X) } $$
+
+__Exemple de normalització per estandardització__
+
+En primer lloc, ens caldrà calcular la mitjana i la desviació estàndard:
+
+```{r}
+## Calculem la mitjana
+m <- mean(cars$weightlbs)
+
+## Calculem la desviació estandard
+s <- sd(cars$weightlbs)
+```
+
+Finalment, apliquem la transformació mitjançant la formula presentada anteriorment:
+
+```{r}
+# Estandardització de valors
+valors_norm_z <- (cars$weightlbs - m)/s
+head(valors_norm_z)
+```
+
+
+## Exercici 2
+
+
+Explica el concepte de reducció de nombre d’atributs i dona un exemple on es vegi la seva utilitat. De quines tècniques disposem per a comprovar que no estem perdent qualitat en aquests procés?
+
+La reducció del nombre d’atributs consisteix a trobar un subconjunt
+dels atributs originals que permeti d’obtenir models de la mateixa qualitat
+que els que s’obtindrien utilitzant tots els atributs. Aquest problema
+s’anomena __problema de la selecció òptima d’atributs__.
+
+
+Aquest problema pot tindre diferents enfocaments, com per exemple: escollir els millors atributsa partir d´un anàlisi preliminar, el.limanar atributs redundants o que aporten poca 
+informació, o reduir la dimensionalitat de les dades generant nous atributs a partir dels
+existents. En tots aquests casos, la finalitat es reduir el cost computacional per a la
+creació de models.
+
+Existeixen els següents mètodes per a tractar amb el problema de la selecció òptima
+d´atributs:
+
+* Mètodes de selecció d´atributs
+
+* Mètodes de reducció del nombre d´atributs
+
+Tot seguit explicarem en que consisteixen cada un dels mètodes i presentarem algunes
+de les tècniques més importants per a la reducció d´atributs.
+
+### Mètodes de selecció d´atributs
+
+La __selecció d´atributs__ consisteix a escollir únicament atributs que són realment 
+rellevants per a resoldre el problema, descartant aquells que no ens aporten informació
+rellevant per a resoldre el problema.
+
+Depenent de si la selecció de característiques fa ús o no de la informació del mètode
+de classificació posterior, podem definir la següent taxonomia:
+
+* Els __algoritmes filtre__ (_filter_), on els atributs o conjunt d´atributs son evaluats
+de forma independent respecte del mètode de classificació que s´utilitzarà amb posterioritat.
+
+* Els __algoritmes empotrats__ (_wrapper_), on el mètode de selecció de característiques
+utilitza el classificador que usarà amb posterioritat.
+
+A continuació passem a estudiar els diferents mètodes de selecció de característiques i els
+algoritmes utilitzats.
+
+En primer lloc, explicarem breument els mètodes per a la selecció d´atributs individuals, coneguts com a __algoritmes univariants__:
+
+* Selecció de màxima rellevància (_maxium relevance selection_), que utilitza el coeficient
+de correlació entre cada atribut.
+
+* Selecció basada en la informació mútua, mesura la informació mútua entre variables
+aleatòries que modelen cada característica i les etiquetes de classificació.
+
+* Mètodes basats en tests estadístics, apliquen tests estadístics de hipòtesi sobre les
+dades, com per exemple el __t-static__ o el __chi-square__.
+
+En segon lloc, trobem els mètodes de selecció de subconjunts d´atributs, coneguts com a
+__algoritmes multivariants__:
+
+* Recerca exhaustiva (_exhaustive search_), consisteix en definir un espai de recerca
+i avaluar, mitjançant un funció de cost, totes les possibles combinacions. Només es aplicable
+a problemes de dimensionalitat reduïda.
+
+* Selecció pas a pas (_stepwise selection_), consisteix en iterar per un algoritme en el
+que cada pas o be afegeix al conjunt d´atributs aquell atribut que augmenta el rendiment
+global del conjunt, o bé el.elimina aquell atribut que fa que el rendiment empitjori.
+
+* Ramificació i poda (_branch and bound_), consisteix en aplicar la tècnica de 
+recerca __branch and bound__.
+
+
+
+
+
+### Mètodes d´extracció d´atributs
+
+La extracció d´atributs es tracta de calcular nous atributs a partir d´existents, amb
+l´objectiu de que els nous atributs resumeixin millor la informació que contenen,
+capturant la naturalesa de la estructura subjacent en les dades.
+
+
+
+#### Anàlisi de Components Principals (PCA)
+
+L´anàlisi de components principals (_Principal Component Analysis_, PCA) ens ajuda
+a solucionar problemes de reducció de dimensionalitat i extracció de característiques
+en les nostres dades de manera automàtica. El PCA es un algoritme molt conegut en 
+l´àmbit de l`anàlisi de dades, i té moltes aplicacions diferents. Informalment, es
+pot definir com la tècnica que intenta aconseguir una representació d´un conjunt de
+dades a un espai de dimensionalitat més reduïda, minimitzant l´error quadràtic.
+
+
+__Exemple de Anàlisi de Components Principal (PCA)__
+
+Per a il.lustrar aquest exemple farem ús del _dataset_ `houses`[^3]:
+
+```{r message=FALSE}
+# Realitzem la lectura de les dades
+library(readr)
+houses <- read_delim("data/houses.csv", ";", 
+    escape_double = FALSE, col_names = FALSE, 
+    trim_ws = TRUE, skip = 1)
+```
+
+
+
+A continuació preparem les dades per a realitzar l`ànalisi:
+
+```{r}
+# Donem nom als atributs
+names(houses) <- c("MVAL", "MINC", "HAGE", "ROOMS", "BEDRMS", "POPN" ,
+"HHLDS", "LAT", "LONG")
+```
+
+
+A continuació normalitzem les dades amb el __mètode d´estandardització de valors__ que hem
+tractat en el [exercici 1](#norm-sd):
+
+
+```{r}
+# Estandarditzem les variables
+
+houses$MVAL_Z <- (houses$MVAL - mean(houses$MVAL))/(sd(houses$MVAL))
+houses$MINC_Z <- (houses$MINC - mean(houses$MINC))/(sd(houses$MINC))
+houses$HAGE_Z <- (houses$HAGE - mean(houses$HAGE))/(sd(houses$HAGE))
+houses$ROOMS_Z <- (houses$ROOMS - mean(houses$ROOMS))/(sd(houses$ROOMS))
+houses$BEDRMS_Z <- (houses$BEDRMS - mean(houses$BEDRMS))/(sd(houses$BEDRMS))
+houses$POPN_Z <- (houses$POPN - mean(houses$POPN))/(sd(houses$POPN))
+houses$HHLDS_Z <- (houses$HHLDS - mean(houses$HHLDS))/(sd(houses$HHLDS))
+houses$LAT_Z <- (houses$LAT - mean(houses$LAT))/(sd(houses$LAT))
+houses$LONG_Z <- (houses$LONG - mean(houses$LONG))/(sd(houses$LONG))
+
+```
+
+
+Seleccionarem una mostra aleàtoria del 90% del conjunt de dades:
+
+```{r}
+# Seleccionem aleatoriament el 90% de les dades per al joc de proves
+dist_unif <- runif(dim(houses)[1], min = 0, max = 1)
+test_houses <- houses[which(dist_unif < .1), ]
+train_houses <- houses[which(dist_unif <= .1), ]
+```
+
+
+Per a realitzar el PCA utilitzarem el paquet `psych`[^4]:
+
+```{r message=FALSE, warning=FALSE}
+# Instal.lem el paquet
+# install.packages("psych",dependencies=TRUE)
+# Carreguem el paquet en la sesió
+library(psych)
+```
+
+
+```{r}
+# Anàlisi de Components Principal (PCA)
+pca_analysis <- principal(train_houses[, c(10:17)], 
+                          nfactors = 8, 
+                          rotate = "none", 
+                          scores = TRUE)
+```
+
+
+[^4]: Podem consultar la documentació en https://cran.r-project.org/web/packages/psych/index.html
+
+
+
+A continuació es mostren els resultats de l`ànalisi PCA:
+
+```{r}
+# Resultas PCA
+# Valors propis (eigen)
+pca_analysis$values
+# Mostrem la matriu amb les variàncies
+pca_analysis$loadings
+```
+
+
+
+
+
+
+
+## Exercici 3
+
+De quines tècniques disposem per resoldre el problema de la possible falta de valors d’un atributs? Dona almenys un exemple de cada tècnica.
+
+
+Un dels problemes més habituals en el tractament previ de les dades és l´absència
+de valors per a un atribut determinat.
+
+Algunes de les opcions disponibles són les següents:
+
+1. Reemplaçar els valors desconeguts per una constant, especificada per l´analista.
+2. Reemplaçar el valor desconegut amb la mitjana (per a variables numèriques) o la moda
+(per a variables categòriques).
+3. Reemplaçar els valors desconeguts amb un valor generat aleatòriament de la distribució
+de la variable.
+
+### Reemplaçar els valors desconeguts per una constant
+
+En els següents exemples utilizarem el _dataset_ `cars` que ja hem utilitzat en 
+apartats anteriors:
+
+```{r warning=FALSE, message=FALSE}
+# Importem les dades
+library(readr)
+cars <- read_csv("data/cars.txt")
+```
+
+Realitzem un primer contacte amb el joc de dades, visualitzan la seva estructura i els
+6 primers registres:
+
+
+```{r eval=FALSE}
+# Realitzem un exàmen preliminar del conjunt de dades
+str(cars)
+head(cars)
+```
+
+Per tal de simplificar l´exemple i millorar la legibiltat del document només treballarem
+amb quatre variables:
+
+```{r}
+# Seleccionem les variables mpg, cubicinches, hp i brand
+my_cars <- cars[, c(1, 3, 4, 8)]
+head(my_cars)
+```
+
+
+Per tal de demostrar les diferents tècniques farem que el _dataframe_ `my_cars`
+tingui valors desconeguts:
+
+```{r}
+# Fem certs valors desconeguts
+my_cars[2, 2] <- NA
+my_cars[4, 4] <- NA
+head(my_cars)
+```
+
+Tot seguit, es mostra com reemplaçar els valors desconeguts amb constants:
+
+```{r}
+# Amb l´ajuda de un test lògic descobrim els valors desconeguts
+missing_values_cubicinches <- is.na(my_cars$cubicinches)
+missing_values_brand <- is.na(my_cars$brand)
+
+```
+
+```{r}
+# Reemplacem els valors desconeguts amb constants
+my_cars$cubicinches[missing_values_cubicinches] <- 0
+my_cars$brand[missing_values_brand] <- "Valor desconegut"
+head(my_cars)
+```
+
+
+### Reemplaçar el valor desconegut amb la mitjana
+
+A continuació es mostra un exemple de com reemplaçar valors desconeguts amb la 
+mitjana:
+
+
+```{r echo=FALSE}
+# Fem certs valors desconeguts
+my_cars[2, 2] <- NA
+my_cars[4, 4] <- NA
+```
+
+
+```{r}
+# Reemplacem els valors desconeguts amb la mitjana
+my_cars$cubicinches[missing_values_cubicinches] <- mean(na.omit(my_cars$cubicinches))
+head(my_cars)
+```
+
+
+### Reemplaçar el valor desconegut amb el valor més freqüent
+
+A diferència de altres mesures estadístiques, R no proporciona una funció predefinida
+per al càlcul de la moda. Es per això, que crearem una funció per a calcular el valor
+més freqüent en un conjunt de dades. Aquesta funció pren com a argument un vector i 
+retorna el valor més freqüent:
+
+
+```{r}
+# Funció per al càlcul de la moda
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+```
+
+```{r}
+# Trobem el valor més freqüent
+moda <- getmode(my_cars$brand)
+moda
+```
+
+```{r}
+# Reemplacem els valors desconeguts amb la moda
+my_cars$brand[missing_values_brand] <- moda
+head(my_cars)
+```
+
+### Reemplaçar amb un valor aleàtori de la distribució de la variable
+
+Per últim, a continuació es mostra un exemple de com reeemplaçar amb un valor
+aleàtori de la distribució de la variable:
+
+
+```{r echo=FALSE}
+# Fem certs valors desconeguts
+my_cars[2, 2] <- NA
+my_cars[4, 4] <- NA
+```
+
+```{r}
+# Generem observacions aleàtories
+random_cubinches_obs <- sample(na.omit(my_cars$cubicinches), 1)
+random_brand_obs <- sample(na.omit(my_cars$brand), 1)
+random_cubinches_obs
+random_brand_obs
+```
+
+
+```{r}
+# Reemplacem els valors desconeguts amb les observacions aleàtories
+my_cars$cubicinches[missing_values_cubicinches] <- random_cubinches_obs
+my_cars$brand[missing_values_brand] <- random_brand_obs
+head(my_cars)
+```
+
+
+## Exercici 4
+
+A partir del joc de dades disponible en el següent enllaç: http://archive.ics.uci.edu/ml/datasets/Adult realitza un estudi similar al que se ha realitzat amb el joc de dades “Titanic”. Explica  el procés que has seguit, quin coneixement has extret, quins objectius t’havies fixat i quins passos i tècniques has emprat.
+
+
+### Carrega i exàmen preliminar del conjunt de dades
+
+```{r}
+# Carrega del joc de dades
+datosAdult <- read.csv('http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',stringsAsFactors = FALSE, header = FALSE)
+
+```
+
+```{r}
+# Noms dels atributs
+names(datosAdult) <- c("age","workclass","fnlwgt","education","education-num","marital-status","occupation","relationship","race","sex","capital-gain","capital-loss","hour-per-week","native-country","income")
+```
+
+### Exploració i tractament de valors desconeguts
+
+### Discretizació d´atributs
+
+### Creació d´atributs nous
+
+### Exploració visual de les dades (EDA)
+
+
+# Bibliografia
+
+
+
+[1] Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
+
+[2] Jordi Gironés Roig, Jordi Casas Roma, Julià Minguillón Alfonso, Ramon Caihuelas Quiles : Minería de Datos: Modelos y Algoritmos. Barcelona, Editorial UOC, 2017, ISBN: 978-84-9116-904-8.
+
+[3] Jiawe Han, Michellie Chamber & Jian Pei: Data mining : concepts and techniques. 3º Edition. USA, Editorial Elsevier, 2012, ISBN 978-0-12-381479-1
+
+
+
+
+
+
+
+
+
