@@ -2,13 +2,40 @@
 output:
   word_document:
     highlight: zenburn
-    reference_docx: word-styles-reference-16.docx
+    reference_docx: word-styles-reference-19.docx
   pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+
+# Format d´entrega 
+
+Aquest document s´ha realitzat mitjançant __Markdown__ [^1] amb l´ajuda del entorn de desenvolupament __RStudio__[^2] utilitzant les característiques que aquest ofereix per
+a la creació de documents __R__ reproduibles.
+
+La documentació generada en la realització de la pràctica  es troba allotjada en __GitHub__ al següent repositori:
+
+* https://github.com/rsanchezs/dataminig
+
+En aquest repositori es poden trobar els següents fitxers:
+
+* Aquest document en formats __pdf__ i __docx__ amb el nom rsanchezs_PAC2.
+* Un document __R Markdown__[^3] que es pot utilitzar per a reproduir tots els exemples
+presentats a la PAC.
+* El conjunt de dades utilitzades.
+
+
+
+![](img/propietat-intelectual.PNG)
+
+
+
+[^1]: https://es.wikipedia.org/wiki/Markdown
+[^2]: https://www.rstudio.com/
+[^3]: https://rmarkdown.rstudio.com/
 
 # Exercicis
 
@@ -34,8 +61,8 @@ $${ X }^{ * }\quad =\quad \frac { X\quad -\quad min(X) }{ rango(X) } =\quad \fra
 
 __Exemple de normalització per la diferència__
 
-Per a il·lustrar aquesta tècnica utilitzarem el conjunt de dades `cars`[^1]del següent
-llibre _"Data Mining and Predictive Analytics"_[^2]:
+Per a il·lustrar aquesta tècnica utilitzarem el conjunt de dades `cars`[^4]del següent
+llibre _"Data Mining and Predictive Analytics"_[^5]:
 
 
 
@@ -46,8 +73,8 @@ library(readr)
 cars <- read_csv("data/cars.txt")
 ```
 
-[^1]: Conjunt de dades disponibles en http://www.dataminingconsultant.com
-[^2]: Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
+[^4]: Conjunt de dades disponibles en http://www.dataminingconsultant.com
+[^5]: Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -234,7 +261,7 @@ dades a un espai de dimensionalitat més reduïda, minimitzant l´error quadràt
 
 __Exemple de Anàlisi de Components Principal (PCA)__
 
-Per a il.lustrar aquest exemple farem ús del _dataset_ `houses`[^3]:
+Per a il.lustrar aquest exemple farem ús del _dataset_ `houses`[^6]:
 
 ```{r message=FALSE}
 # Realitzem la lectura de les dades
@@ -244,7 +271,7 @@ houses <- read_delim("data/houses.csv", ";",
     trim_ws = TRUE, skip = 1)
 ```
 
-
+[^6]:Conjunt de dades disponible en StatLib: http://lib.stat.cmu.edu/datasets/houses.zip
 
 A continuació preparem les dades per a realitzar l`ànalisi:
 
@@ -285,7 +312,7 @@ train_houses <- houses[which(dist_unif <= .1), ]
 ```
 
 
-Per a realitzar el PCA utilitzarem el paquet `psych`[^4]:
+Per a realitzar el PCA utilitzarem el paquet `psych`[^7]:
 
 ```{r message=FALSE, warning=FALSE}
 # Instal.lem el paquet
@@ -293,6 +320,9 @@ Per a realitzar el PCA utilitzarem el paquet `psych`[^4]:
 # Carreguem el paquet en la sesió
 library(psych)
 ```
+
+[^7]:Podem consultar la documentació en https://cran.r-project.org/web/packages/psych/index.html
+
 
 
 ```{r}
@@ -304,7 +334,7 @@ pca_analysis <- principal(train_houses[, c(10:17)],
 ```
 
 
-[^4]: Podem consultar la documentació en https://cran.r-project.org/web/packages/psych/index.html
+
 
 
 
@@ -342,7 +372,7 @@ de la variable.
 
 ### Reemplaçar els valors desconeguts per una constant
 
-En els següents exemples utilizarem el _dataset_ `cars` que ja hem utilitzat en 
+En els següents exemples utilitzarem el _dataset_ `cars` que ja hem utilitzat en 
 apartats anteriors:
 
 ```{r warning=FALSE, message=FALSE}
@@ -351,7 +381,7 @@ library(readr)
 cars <- read_csv("data/cars.txt")
 ```
 
-Realitzem un primer contacte amb el joc de dades, visualitzan la seva estructura i els
+Realitzem un primer contacte amb el joc de dades, visualitzant la seva estructura i els
 6 primers registres:
 
 
@@ -361,7 +391,7 @@ str(cars)
 head(cars)
 ```
 
-Per tal de simplificar l´exemple i millorar la legibiltat del document només treballarem
+Per tal de simplificar l´exemple i millorar la llegibilitat del document només treballarem
 amb quatre variables:
 
 ```{r}
@@ -420,7 +450,7 @@ head(my_cars)
 
 ### Reemplaçar el valor desconegut amb el valor més freqüent
 
-A diferència de altres mesures estadístiques, R no proporciona una funció predefinida
+A diferència de altres mesures estadístiques, R no proporciona una funció definida
 per al càlcul de la moda. Es per això, que crearem una funció per a calcular el valor
 més freqüent en un conjunt de dades. Aquesta funció pren com a argument un vector i 
 retorna el valor més freqüent:
@@ -448,8 +478,8 @@ head(my_cars)
 
 ### Reemplaçar amb un valor aleàtori de la distribució de la variable
 
-Per últim, a continuació es mostra un exemple de com reeemplaçar amb un valor
-aleàtori de la distribució de la variable:
+Per últim, a continuació es mostra un exemple de com reemplaçar amb un valor
+aleatori de la distribució de la variable:
 
 
 ```{r echo=FALSE}
