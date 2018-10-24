@@ -713,8 +713,8 @@ library(forcats)
 # Combinem les classes
 adult$workclass <- fct_collapse(adult$workclass, 
                    Unknown = c("Never-worked", "Without-pay", "Unknowm"),
-                   Government = c("Federal-gov", "Federal-gov", "State-gov"),
-                   SelfEmployed = c("Self-emp-not-inc", "Self-emp-not-inc")
+                   Government = c("Federal-gov", "Local-gov", "State-gov"),
+                   SelfEmployed = c("Self-emp-not-inc", "Self-emp-inc")
       )
 
 ```
