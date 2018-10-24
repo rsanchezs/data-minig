@@ -2,7 +2,7 @@
 output:
   word_document:
     highlight: zenburn
-    reference_docx: word-styles-reference-19.docx
+    reference_docx: word-styles-reference-20.docx
   pdf_document: default
 ---
 
@@ -68,7 +68,7 @@ llibre _"Data Mining and Predictive Analytics"_[^5]:
 
 ```{r eval=FALSE, warning=FALSE, message=FALSE}
 
-## Carregem les dades
+# Carregem les dades
 library(readr)
 cars <- read_csv("data/cars.txt")
 ```
@@ -78,7 +78,7 @@ cars <- read_csv("data/cars.txt")
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
-## Carregem les dades
+# Carregem les dades
 library(readr)
 cars <- read_csv("data/cars.txt")
 ```
@@ -87,14 +87,14 @@ cars <- read_csv("data/cars.txt")
 Al  següent fragment presentem un resum estadístic de la variable `weightlbs`:
 
 ```{r}
-## Resum estadístic variable `weight`
+# Resum estadístic variable `weight`
 summary(cars$weightlbs)
 ```
 
 Trobem els valors màxim i mínim de la variable `weightlbs`:
 
 ```{r}
-## Trobem els valors mínim i màxim de la variable `weight`
+# Trobem els valors mínim i màxim de la variable `weight`
 valor_min <- min(cars$weightlbs)
 valor_max <- max(cars$weightlbs)
 ```
@@ -102,7 +102,7 @@ valor_max <- max(cars$weightlbs)
 Finalment, trobem el valor normalitzat de la variable `weightlbs`:
 
 ```{r}
-## Valor normalitzat mitjançant la tècnica de la diferència
+# Valor normalitzat mitjançant la tècnica de la diferència
 valors_norm_dif <- (cars$weightlbs - valor_min)/(valor_max - valor_min)
 head(valors_norm_dif)
 ```
@@ -124,7 +124,7 @@ Per a explicar aquesta tècnica seguirem treballant amb el conjunt de dades `car
 de l´exemple anterior:
 
 ```{r}
-## Calculem el valor de decimals
+# Calculem el valor de decimals
 max(abs(cars$weightlbs))
 ```
 
@@ -132,7 +132,7 @@ Un cop calculat el nombre de dígits ($d$), ens trobem amb condicions de transfo
 els valors de la variable `weight`:
 
 ```{r}
-## Valors transformats amb la tècnica decimal
+# Valors transformats amb la tècnica decimal
 valors_norm_dec <- cars$weightlbs/10^4
 head(valors_norm_dec)
 ```
@@ -359,9 +359,6 @@ pca_analysis$loadings
 De quines tècniques disposem per resoldre el problema de la possible falta de valors d’un atributs? Dona almenys un exemple de cada tècnica.
 
 
-Un dels problemes més habituals en el tractament previ de les dades és l´absència
-de valors per a un atribut determinat.
-
 Algunes de les opcions disponibles són les següents:
 
 1. Reemplaçar els valors desconeguts per una constant, especificada per l´analista.
@@ -512,24 +509,231 @@ A partir del joc de dades disponible en el següent enllaç: http://archive.ics.
 
 ### Carrega i exàmen preliminar del conjunt de dades
 
-```{r}
-# Carrega del joc de dades
-datosAdult <- read.csv('http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',stringsAsFactors = FALSE, header = FALSE)
+En primer lloc, instal.larem el paquet `readr`[^8] que forma part del ecosistema `tidyverse`[^9] i que ens permetrà llegir les dades:
 
+
+```{r}
+# La forma més sencilla de instal.lar readr es instal.lar tidyverse
+##install.packages("tidyverse")
+
+# Alternativament, podem instal.lar només readr
+##install.packages("readr")
 ```
+
+Un cop instal.lat el paquet el carregarem a la sessió R mitjançant la següent línia de codi:
+
+```{r message=FALSE, warning=FALSE}
+# Carrega de readr
+##library(readr)
+
+# Alternativament, com que forma part de tidyverse
+library(tidyverse)
+```
+
+Observem que, hem fet ús de la segona opció que carrega tots els paquets de `tidyverse`,
+ja que utilitzarem per a la realització de la pràctica altres paquets, com per exemple:
+`dplyr` (per a la transformació de dades),`tibble` (per a un tractament més refinat de
+`data.frames`), `ggplot2` (per a la visualització de les dades), etc.
+
+
+Un cop carregat el paquet a la sessió R, ja podem fer ús de les funcions. Per a importar
+les dades des de l´adreça utilitzarem la funció `read_csv()`:
+
+```{r message=FALSE, warning=FALSE}
+# Llegim les dades
+adult <- read_csv("http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data")
+```
+
+Convertim el conjunt de dades `adult` que és del tipus `data.frame` a `tibble`:
+
+```{r}
+# Convertim el dataframe a tibble
+as_tibble(adult)
+```
+
+Podem adonar-nos que, el conjunt de dades esta format per 32.560 observacions i 15 variables. A més, amb l´ajuda de `tibble` també podem observar el tipus per a cada columna.
+
+
+Com que el nom de les columnes es poc descriptiu per alguns dels atributs, personalitzarem
+els noms mitjançant la següent línia de codi:
 
 ```{r}
 # Noms dels atributs
-names(datosAdult) <- c("age","workclass","fnlwgt","education","education-num","marital-status","occupation","relationship","race","sex","capital-gain","capital-loss","hour-per-week","native-country","income")
+names(adult) <- c("age","workclass","fnlwgt","education","education-num","marital-status","occupation","relationship","race","sex","capital-gain","capital-loss","hour-per-week","native-country","income")
 ```
+
+Podem comprovar el nom de les columnes mitjançant la funció `colnames`:
+
+```{r}
+# Comprovem es nom de les columnes
+colnames(adult)
+```
+
+
+[^8]: Paquet per a la lectura de dades amb format rectangular: https://readr.tidyverse.org/
+[^9]: Conjunt de paquets R per a la Ciència de les Dades :https://www.tidyverse.org/
+
 
 ### Exploració i tractament de valors desconeguts
 
+
+En tercer lloc, ens caldria comprovar que el nostre conjunt de dades no conté valors
+desconeguts:
+
+```{r}
+# Estadístiques de valors buits.
+sapply(adult, function(x) sum(is.na(x)))
+# Alternativament
+colSums(is.na(adult))
+```
+
+Passem a analitzar la variable `workclass` que representa la industria en que una persona
+està treballant:
+
+```{r}
+# Resum dels valors que conté la variable workclass
+unique(adult$workclass)
+```
+
+
+Com es pot observar la variable `workclass` conté el caràcter `?` per a representar
+valors desconeguts. Amb l´objectiu de fer aquest grup més descriptiu podríem canviar aquests valors per la constant `Unknown`:
+
+```{r}
+# Amb l´ajuda de un test lògic descobrim els valors desconeguts
+missing_values_workclass <- adult$workclass == "?"
+# Reemplacem els valors desconeguts amb la  constant
+adult$workclass[missing_values_workclass] <- "Unknown"
+```
+
+
 ### Discretizació d´atributs
 
-### Creació d´atributs nous
+El següent pas seria discretitzar els atributs del nostre conjunt de dades en el cas de que fos necessari. Per a descobrir quines dades podrien ser discretitzades farem ús de la funció `apply()` que aplicarà la composició de les funcions `lenght(unique())` a cada columna retornant el nombre de observacions diferents per a cada variable:
+
+```{r}
+# Per a quines variables tindria sentit un procés de discretització?
+apply(adult,2, function(x) length(unique(x)))
+```
+
+Segons els resultats podríem discretitzar aquelles variables amb poques classes i canviar el seu tipus a `factor`, que és la manera que té R de tractar amb les variables de tipus categòric.
+
+```{r}
+# Discretitzem les variables amb poques classes
+cols <- c('workclass', 'education', 'marital-status', 'relationship', 'race',
+          'sex', 'income')
+adult <- mutate_at(adult, cols, as.factor)
+adult
+```
+
+Fixe-mos amb el codi anterior que hem fet ús de la funció `dplyr::mutate_at`[^9] per a convertir
+les columnes de tipus `character` al tipus `factor`.
+
+[^9]: La notació `paquet::funció` és la forma explicita de cridar una funció. Amb la funció `dplyr::mutate_if()` haguéssim pogut canviar totes les columnes.
+
+
+
+
+
+### Reducció de la dimensionalitat
+
+Per a la simplificació de l´anàlisi les següents variables són descartades:
+
+```{r}
+# Reducció del nombre d´atributs
+adult$fnlwgt <- NULL
+adult$education <- NULL
+adult$relationship <- NULL
+```
+
+Els motius són els següents:
+
+* El atribut `fnlwgt` no és prou descriptiu per si mateix i no disposem de documentació 
+del conjunt de dades.
+
+* El atribut `education` pot ser el.limitat, ja que es pot conèixer pel nombre d´anys de 
+formació acadèmica. En el conjunt de dades representat per la variable `education-num`.
+
+* El atribut `relationship` pot ser el.limiat, degut a que es pot estimar a partir del gènere i
+l´estat civil. En el conjunt de dades representat per `marital-status` i `sex`, respectivament.
+
+
 
 ### Exploració visual de les dades (EDA)
+
+La primera variable de l´anàlisi és `age` que es tracta d´una variable continua. 
+Podríem realitzar els següents histogrames que analitzen la correlació entre aquesta
+variable i la variable categòrica `income`:
+
+```{r}
+# Histograma de la edat per grup d´ingresos
+ggplot(data = adult, mapping = aes(x = age)) + 
+  geom_freqpoly(mapping = aes(color = income), binwidth = 5)
+```
+
+
+```{r}
+# Histograma de la edat per grup de gènere
+ggplot(data = adult, mapping = aes(x = age)) + 
+  geom_freqpoly(mapping = aes(color = sex), binwidth = 5)
+```
+
+
+El primer histograma ens indica que la majoria d´observacions reben una retribució per baix de 
+50.000$ a l´any. A més, aquells que reben una remuneració de més de 50.000 es troben a la mitat
+de la seva carrera professional.
+
+Per altra banda, en el segon histograma el pot apreciar que les dones de qualsevol edat reben
+menys ingressos que els homes. També es pot observar que aquesta diferencia augmenta a
+mesura que són més grans.
+
+
+Passem a analitzar la variable `workclass` que representa la industria en que una persona
+està treballant:
+
+```{r}
+summary(adult$workclass)
+
+```
+
+
+Podem observar que existeixen dos grups petits, `Never-worked` i `Without-pay`. Podríem
+combinar aquests grups amb `Unknowm`. A més, aquells que treballen per al govern estan
+distribuïts als grups _federal_, _state_ i _local_. Per a facilitar el anàlisi, agruparem aquestes classes en una sola que anomenarem `Government`.
+
+Per últim, aquells que són autonoms estàn distribuïts en _incorporated_ i _not incorporated_ i els combinarem en una variable amb el nom `Self-Employed`.
+
+Per altra banda, cal anomenar que farem ús del paquet `forcats`que ens ajudarà a combinar les 
+variables:
+
+
+```{r  message=FALSE, warning=FALSE}
+# Carreguem la llibreria
+library(forcats)
+# Combinem les classes
+adult$workclass <- fct_collapse(adult$workclass, 
+                   Unknown = c("Never-worked", "Without-pay", "Unknowm"),
+                   Government = c("Federal-gov", "Federal-gov", "State-gov"),
+                   SelfEmployed = c("Self-emp-not-inc", "Self-emp-not-inc")
+      )
+
+```
+
+
+Un cop reduït el nombre de classes ja podem comparar les variables `workclass` i `income`:
+
+
+```{r}
+
+# Gràfic workclass vs income
+adult %>% 
+  count(workclass, income) %>% 
+    ggplot(mapping = aes(x = workclass, y = income)) +
+      geom_tile(mapping = aes(fill = n))
+```
+
+
+
 
 
 # Bibliografia
