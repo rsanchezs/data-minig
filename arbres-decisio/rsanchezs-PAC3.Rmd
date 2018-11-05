@@ -1,0 +1,756 @@
+---
+output:
+  word_document:
+    highlight: zenburn
+    reference_docx: word-styles-reference-20.docx
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Format d´entrega 
+
+Aquest document s´ha realitzat mitjançant __Markdown__ [^1] amb l´ajuda del entorn de desenvolupament __RStudio__[^2] utilitzant les característiques que aquest ofereix per
+a la creació de documents __R__ reproduibles.
+
+La documentació generada en la realització de la pràctica  es troba allotjada en __GitHub__ al següent repositori:
+
+* https://github.com/rsanchezs/dataminig
+
+En aquest repositori es poden trobar els següents fitxers:
+
+* Aquest document en formats __pdf__ i __docx__ amb el nom rsanchezs_PAC2.
+* Un document __R Markdown__[^3] que es pot utilitzar per a reproduir tots els exemples
+presentats a la PAC.
+* El conjunt de dades utilitzades.
+
+
+
+![](img/propietat-intelectual.PNG)
+
+
+
+[^1]: https://es.wikipedia.org/wiki/Markdown
+[^2]: https://www.rstudio.com/
+[^3]: https://rmarkdown.rstudio.com/
+
+# Exercicis
+
+## Exercici 1
+
+
+Explica el concepte de transformació de valors i dona tres exemple on es vegi la seva utilitat.
+
+Per __transformació de valors__ entenem modificacions dins el tipus de valors
+que poden prendre tots o alguns del atributs.
+
+Les operacions més habituals són la __normalització__ i la __discretització__ de dades.
+Existeixen varies tècniques per a la transformació de dades, passem a examinar tres de
+les més importants. Considerarem $X$ com al valor original del atribut i ${ X }^{ * }$ com al
+valor del atribut normalitzat.
+
+### Normalització per la diferència
+
+La normalització per la diferència tracta de compensar l´efecte de la distància
+del valor que tractem respecte al màxim dels valors observats. Es a dir,
+
+$${ X }^{ * }\quad =\quad \frac { X\quad -\quad min(X) }{ rango(X) } =\quad \frac { X\quad -\quad min(X) }{ max(x)\quad -\quad min(x) }$$ 
+
+__Exemple de normalització per la diferència__
+
+Per a il·lustrar aquesta tècnica utilitzarem el conjunt de dades `cars`[^4]del següent
+llibre _"Data Mining and Predictive Analytics"_[^5]:
+
+
+
+```{r eval=FALSE, warning=FALSE, message=FALSE}
+
+# Carregem les dades
+library(readr)
+cars <- read_csv("data/cars.txt")
+```
+
+[^4]: Conjunt de dades disponibles en http://www.dataminingconsultant.com
+[^5]: Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+# Carregem les dades
+library(readr)
+cars <- read_csv("data/cars.txt")
+```
+
+
+Al  següent fragment presentem un resum estadístic de la variable `weightlbs`:
+
+```{r}
+# Resum estadístic variable `weight`
+summary(cars$weightlbs)
+```
+
+Trobem els valors màxim i mínim de la variable `weightlbs`:
+
+```{r}
+# Trobem els valors mínim i màxim de la variable `weight`
+valor_min <- min(cars$weightlbs)
+valor_max <- max(cars$weightlbs)
+```
+
+Finalment, trobem el valor normalitzat de la variable `weightlbs`:
+
+```{r}
+# Valor normalitzat mitjançant la tècnica de la diferència
+valors_norm_dif <- (cars$weightlbs - valor_min)/(valor_max - valor_min)
+head(valors_norm_dif)
+```
+
+
+### Escalat decimal
+
+La tècnica del __escalat decimal__ ens garanteix que tots els valors normalitzats
+estiguin entre -1 i 1.
+
+$${ X }_{ decimal }^{ * }\quad =\quad \frac { X }{ { 10 }^{ d } }$$
+
+on $d$ representa el nombre de dígits del valor de la dada amb el valor absolut 
+més gran.
+
+__Exemple de normalització decimal__
+
+Per a explicar aquesta tècnica seguirem treballant amb el conjunt de dades `cars`
+de l´exemple anterior:
+
+```{r}
+# Calculem el valor de decimals
+max(abs(cars$weightlbs))
+```
+
+Un cop calculat el nombre de dígits ($d$), ens trobem amb condicions de transformar
+els valors de la variable `weight`:
+
+```{r}
+# Valors transformats amb la tècnica decimal
+valors_norm_dec <- cars$weightlbs/10^4
+head(valors_norm_dec)
+```
+
+### Normalització basada en la desviació estàndard: estandardització de valors {#norm-sd}
+
+El __mètode d´estandardització de valors__ assegura que s´obtenen valors dins el
+rang escollit que tenen la propietat que la seva mitjana és zero i la seva desviació
+estàndard val 1.
+
+Es a dir, l´estandardització consisteix en la diferència entre el valor de l´atribut i la seva mitjana, dividint aquesta diferència per la desviació estàndard dels valors de l´atribut. Es a dir:
+
+$$Z-score\quad =\quad \frac { X\quad -\quad mean(X) }{ SD(X) } $$
+
+__Exemple de normalització per estandardització__
+
+En primer lloc, ens caldrà calcular la mitjana i la desviació estàndard:
+
+```{r}
+## Calculem la mitjana
+m <- mean(cars$weightlbs)
+
+## Calculem la desviació estandard
+s <- sd(cars$weightlbs)
+```
+
+Finalment, apliquem la transformació mitjançant la formula presentada anteriorment:
+
+```{r}
+# Estandardització de valors
+valors_norm_z <- (cars$weightlbs - m)/s
+head(valors_norm_z)
+```
+
+
+## Exercici 2
+
+
+Explica el concepte de reducció de nombre d’atributs i dona un exemple on es vegi la seva utilitat. De quines tècniques disposem per a comprovar que no estem perdent qualitat en aquests procés?
+
+La reducció del nombre d’atributs consisteix a trobar un subconjunt
+dels atributs originals que permeti d’obtenir models de la mateixa qualitat
+que els que s’obtindrien utilitzant tots els atributs. Aquest problema
+s’anomena __problema de la selecció òptima d’atributs__.
+
+
+Aquest problema pot tindre diferents enfocaments, com per exemple: escollir els millors atributsa partir d´un anàlisi preliminar, el.limanar atributs redundants o que aporten poca 
+informació, o reduir la dimensionalitat de les dades generant nous atributs a partir dels
+existents. En tots aquests casos, la finalitat es reduir el cost computacional per a la
+creació de models.
+
+Existeixen els següents mètodes per a tractar amb el problema de la selecció òptima
+d´atributs:
+
+* Mètodes de selecció d´atributs
+
+* Mètodes de reducció del nombre d´atributs
+
+Tot seguit explicarem en que consisteixen cada un dels mètodes i presentarem algunes
+de les tècniques més importants per a la reducció d´atributs.
+
+### Mètodes de selecció d´atributs
+
+La __selecció d´atributs__ consisteix a escollir únicament atributs que són realment 
+rellevants per a resoldre el problema, descartant aquells que no ens aporten informació
+rellevant per a resoldre el problema.
+
+Depenent de si la selecció de característiques fa ús o no de la informació del mètode
+de classificació posterior, podem definir la següent taxonomia:
+
+* Els __algoritmes filtre__ (_filter_), on els atributs o conjunt d´atributs son evaluats
+de forma independent respecte del mètode de classificació que s´utilitzarà amb posterioritat.
+
+* Els __algoritmes empotrats__ (_wrapper_), on el mètode de selecció de característiques
+utilitza el classificador que usarà amb posterioritat.
+
+A continuació passem a estudiar els diferents mètodes de selecció de característiques i els
+algoritmes utilitzats.
+
+En primer lloc, explicarem breument els mètodes per a la selecció d´atributs individuals, coneguts com a __algoritmes univariants__:
+
+* Selecció de màxima rellevància (_maxium relevance selection_), que utilitza el coeficient
+de correlació entre cada atribut.
+
+* Selecció basada en la informació mútua, mesura la informació mútua entre variables
+aleatòries que modelen cada característica i les etiquetes de classificació.
+
+* Mètodes basats en tests estadístics, apliquen tests estadístics de hipòtesi sobre les
+dades, com per exemple el __t-static__ o el __chi-square__.
+
+En segon lloc, trobem els mètodes de selecció de subconjunts d´atributs, coneguts com a
+__algoritmes multivariants__:
+
+* Recerca exhaustiva (_exhaustive search_), consisteix en definir un espai de recerca
+i avaluar, mitjançant un funció de cost, totes les possibles combinacions. Només es aplicable
+a problemes de dimensionalitat reduïda.
+
+* Selecció pas a pas (_stepwise selection_), consisteix en iterar per un algoritme en el
+que cada pas o be afegeix al conjunt d´atributs aquell atribut que augmenta el rendiment
+global del conjunt, o bé el.elimina aquell atribut que fa que el rendiment empitjori.
+
+* Ramificació i poda (_branch and bound_), consisteix en aplicar la tècnica de 
+recerca __branch and bound__.
+
+
+
+
+
+### Mètodes d´extracció d´atributs
+
+La extracció d´atributs es tracta de calcular nous atributs a partir d´existents, amb
+l´objectiu de que els nous atributs resumeixin millor la informació que contenen,
+capturant la naturalesa de la estructura subjacent en les dades.
+
+
+
+#### Anàlisi de Components Principals (PCA)
+
+L´anàlisi de components principals (_Principal Component Analysis_, PCA) ens ajuda
+a solucionar problemes de reducció de dimensionalitat i extracció de característiques
+en les nostres dades de manera automàtica. El PCA es un algoritme molt conegut en 
+l´àmbit de l`anàlisi de dades, i té moltes aplicacions diferents. Informalment, es
+pot definir com la tècnica que intenta aconseguir una representació d´un conjunt de
+dades a un espai de dimensionalitat més reduïda, minimitzant l´error quadràtic.
+
+
+__Exemple de Anàlisi de Components Principal (PCA)__
+
+Per a il.lustrar aquest exemple farem ús del _dataset_ `houses`[^6]:
+
+```{r message=FALSE}
+# Realitzem la lectura de les dades
+library(readr)
+houses <- read_delim("data/houses.csv", ";", 
+    escape_double = FALSE, col_names = FALSE, 
+    trim_ws = TRUE, skip = 1)
+```
+
+[^6]:Conjunt de dades disponible en StatLib: http://lib.stat.cmu.edu/datasets/houses.zip
+
+A continuació preparem les dades per a realitzar l`ànalisi:
+
+```{r}
+# Donem nom als atributs
+names(houses) <- c("MVAL", "MINC", "HAGE", "ROOMS", "BEDRMS", "POPN" ,
+"HHLDS", "LAT", "LONG")
+```
+
+
+A continuació normalitzem les dades amb el __mètode d´estandardització de valors__ que hem
+tractat en el [exercici 1](#norm-sd):
+
+
+```{r}
+# Estandarditzem les variables
+
+houses$MVAL_Z <- (houses$MVAL - mean(houses$MVAL))/(sd(houses$MVAL))
+houses$MINC_Z <- (houses$MINC - mean(houses$MINC))/(sd(houses$MINC))
+houses$HAGE_Z <- (houses$HAGE - mean(houses$HAGE))/(sd(houses$HAGE))
+houses$ROOMS_Z <- (houses$ROOMS - mean(houses$ROOMS))/(sd(houses$ROOMS))
+houses$BEDRMS_Z <- (houses$BEDRMS - mean(houses$BEDRMS))/(sd(houses$BEDRMS))
+houses$POPN_Z <- (houses$POPN - mean(houses$POPN))/(sd(houses$POPN))
+houses$HHLDS_Z <- (houses$HHLDS - mean(houses$HHLDS))/(sd(houses$HHLDS))
+houses$LAT_Z <- (houses$LAT - mean(houses$LAT))/(sd(houses$LAT))
+houses$LONG_Z <- (houses$LONG - mean(houses$LONG))/(sd(houses$LONG))
+
+```
+
+
+Seleccionarem una mostra aleàtoria del 90% del conjunt de dades:
+
+```{r}
+# Seleccionem aleatoriament el 90% de les dades per al joc de proves
+dist_unif <- runif(dim(houses)[1], min = 0, max = 1)
+test_houses <- houses[which(dist_unif < .1), ]
+train_houses <- houses[which(dist_unif <= .1), ]
+```
+
+
+Per a realitzar el PCA utilitzarem el paquet `psych`[^7]:
+
+```{r message=FALSE, warning=FALSE}
+# Instal.lem el paquet
+# install.packages("psych",dependencies=TRUE)
+# Carreguem el paquet en la sesió
+library(psych)
+```
+
+[^7]:Podem consultar la documentació en https://cran.r-project.org/web/packages/psych/index.html
+
+
+
+```{r}
+# Anàlisi de Components Principal (PCA)
+pca_analysis <- principal(train_houses[, c(10:17)], 
+                          nfactors = 8, 
+                          rotate = "none", 
+                          scores = TRUE)
+```
+
+
+
+
+
+
+A continuació es mostren els resultats de l`ànalisi PCA:
+
+```{r}
+# Resultas PCA
+# Valors propis (eigen)
+pca_analysis$values
+# Mostrem la matriu amb les variàncies
+pca_analysis$loadings
+```
+
+
+
+
+
+
+
+## Exercici 3
+
+De quines tècniques disposem per resoldre el problema de la possible falta de valors d’un atributs? Dona almenys un exemple de cada tècnica.
+
+
+Algunes de les opcions disponibles són les següents:
+
+1. Reemplaçar els valors desconeguts per una constant, especificada per l´analista.
+2. Reemplaçar el valor desconegut amb la mitjana (per a variables numèriques) o la moda
+(per a variables categòriques).
+3. Reemplaçar els valors desconeguts amb un valor generat aleatòriament de la distribució
+de la variable.
+
+### Reemplaçar els valors desconeguts per una constant
+
+En els següents exemples utilitzarem el _dataset_ `cars` que ja hem utilitzat en 
+apartats anteriors:
+
+```{r warning=FALSE, message=FALSE}
+# Importem les dades
+library(readr)
+cars <- read_csv("data/cars.txt")
+```
+
+Realitzem un primer contacte amb el joc de dades, visualitzant la seva estructura i els
+6 primers registres:
+
+
+```{r eval=FALSE}
+# Realitzem un exàmen preliminar del conjunt de dades
+str(cars)
+head(cars)
+```
+
+Per tal de simplificar l´exemple i millorar la llegibilitat del document només treballarem
+amb quatre variables:
+
+```{r}
+# Seleccionem les variables mpg, cubicinches, hp i brand
+my_cars <- cars[, c(1, 3, 4, 8)]
+head(my_cars)
+```
+
+
+Per tal de demostrar les diferents tècniques farem que el _dataframe_ `my_cars`
+tingui valors desconeguts:
+
+```{r}
+# Fem certs valors desconeguts
+my_cars[2, 2] <- NA
+my_cars[4, 4] <- NA
+head(my_cars)
+```
+
+Tot seguit, es mostra com reemplaçar els valors desconeguts amb constants:
+
+```{r}
+# Amb l´ajuda de un test lògic descobrim els valors desconeguts
+missing_values_cubicinches <- is.na(my_cars$cubicinches)
+missing_values_brand <- is.na(my_cars$brand)
+
+```
+
+```{r}
+# Reemplacem els valors desconeguts amb constants
+my_cars$cubicinches[missing_values_cubicinches] <- 0
+my_cars$brand[missing_values_brand] <- "Valor desconegut"
+head(my_cars)
+```
+
+
+### Reemplaçar el valor desconegut amb la mitjana
+
+A continuació es mostra un exemple de com reemplaçar valors desconeguts amb la 
+mitjana:
+
+
+```{r echo=FALSE}
+# Fem certs valors desconeguts
+my_cars[2, 2] <- NA
+my_cars[4, 4] <- NA
+```
+
+
+```{r}
+# Reemplacem els valors desconeguts amb la mitjana
+my_cars$cubicinches[missing_values_cubicinches] <- mean(na.omit(my_cars$cubicinches))
+head(my_cars)
+```
+
+
+### Reemplaçar el valor desconegut amb el valor més freqüent
+
+A diferència de altres mesures estadístiques, R no proporciona una funció definida
+per al càlcul de la moda. Es per això, que crearem una funció per a calcular el valor
+més freqüent en un conjunt de dades. Aquesta funció pren com a argument un vector i 
+retorna el valor més freqüent:
+
+
+```{r}
+# Funció per al càlcul de la moda
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+```
+
+```{r}
+# Trobem el valor més freqüent
+moda <- getmode(my_cars$brand)
+moda
+```
+
+```{r}
+# Reemplacem els valors desconeguts amb la moda
+my_cars$brand[missing_values_brand] <- moda
+head(my_cars)
+```
+
+### Reemplaçar amb un valor aleàtori de la distribució de la variable
+
+Per últim, a continuació es mostra un exemple de com reemplaçar amb un valor
+aleatori de la distribució de la variable:
+
+
+```{r echo=FALSE}
+# Fem certs valors desconeguts
+my_cars[2, 2] <- NA
+my_cars[4, 4] <- NA
+```
+
+```{r}
+# Generem observacions aleàtories
+random_cubinches_obs <- sample(na.omit(my_cars$cubicinches), 1)
+random_brand_obs <- sample(na.omit(my_cars$brand), 1)
+random_cubinches_obs
+random_brand_obs
+```
+
+
+```{r}
+# Reemplacem els valors desconeguts amb les observacions aleàtories
+my_cars$cubicinches[missing_values_cubicinches] <- random_cubinches_obs
+my_cars$brand[missing_values_brand] <- random_brand_obs
+head(my_cars)
+```
+
+
+## Exercici 4
+
+A partir del joc de dades disponible en el següent enllaç: http://archive.ics.uci.edu/ml/datasets/Adult realitza un estudi similar al que se ha realitzat amb el joc de dades “Titanic”. Explica  el procés que has seguit, quin coneixement has extret, quins objectius t’havies fixat i quins passos i tècniques has emprat.
+
+
+### Carrega i exàmen preliminar del conjunt de dades
+
+En primer lloc, instal.larem el paquet `readr`[^8] que forma part del ecosistema `tidyverse`[^9] i que ens permetrà llegir les dades:
+
+
+```{r}
+# La forma més sencilla de instal.lar readr es instal.lar tidyverse
+##install.packages("tidyverse")
+
+# Alternativament, podem instal.lar només readr
+##install.packages("readr")
+```
+
+Un cop instal.lat el paquet el carregarem a la sessió R mitjançant la següent línia de codi:
+
+```{r message=FALSE, warning=FALSE}
+# Carrega de readr
+##library(readr)
+
+# Alternativament, com que forma part de tidyverse
+library(tidyverse)
+```
+
+Observem que, hem fet ús de la segona opció que carrega tots els paquets de `tidyverse`,
+ja que utilitzarem per a la realització de la pràctica altres paquets, com per exemple:
+`dplyr` (per a la transformació de dades),`tibble` (per a un tractament més refinat de
+`data.frames`), `ggplot2` (per a la visualització de les dades), etc.
+
+
+Un cop carregat el paquet a la sessió R, ja podem fer ús de les funcions. Per a importar
+les dades des de l´adreça utilitzarem la funció `read_csv()`:
+
+```{r message=FALSE, warning=FALSE}
+# Llegim les dades
+adult <- read_csv("http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data")
+```
+
+Convertim el conjunt de dades `adult` que és del tipus `data.frame` a `tibble`:
+
+```{r}
+# Convertim el dataframe a tibble
+as_tibble(adult)
+```
+
+Podem adonar-nos que, el conjunt de dades esta format per 32.560 observacions i 15 variables. A més, amb l´ajuda de `tibble` també podem observar el tipus per a cada columna.
+
+
+Com que el nom de les columnes es poc descriptiu per alguns dels atributs, personalitzarem
+els noms mitjançant la següent línia de codi:
+
+```{r}
+# Noms dels atributs
+names(adult) <- c("age","workclass","fnlwgt","education","education-num","marital-status","occupation","relationship","race","sex","capital-gain","capital-loss","hour-per-week","native-country","income")
+```
+
+Podem comprovar el nom de les columnes mitjançant la funció `colnames`:
+
+```{r}
+# Comprovem es nom de les columnes
+colnames(adult)
+```
+
+
+[^8]: Paquet per a la lectura de dades amb format rectangular: https://readr.tidyverse.org/
+[^9]: Conjunt de paquets R per a la Ciència de les Dades :https://www.tidyverse.org/
+
+
+### Exploració i tractament de valors desconeguts
+
+
+En tercer lloc, ens caldria comprovar que el nostre conjunt de dades no conté valors
+desconeguts:
+
+```{r}
+# Estadístiques de valors buits.
+sapply(adult, function(x) sum(is.na(x)))
+# Alternativament
+colSums(is.na(adult))
+```
+
+Passem a analitzar la variable `workclass` que representa la industria en que una persona
+està treballant:
+
+```{r}
+# Resum dels valors que conté la variable workclass
+unique(adult$workclass)
+```
+
+
+Com es pot observar la variable `workclass` conté el caràcter `?` per a representar
+valors desconeguts. Amb l´objectiu de fer aquest grup més descriptiu podríem canviar aquests valors per la constant `Unknown`:
+
+```{r}
+# Amb l´ajuda de un test lògic descobrim els valors desconeguts
+missing_values_workclass <- adult$workclass == "?"
+# Reemplacem els valors desconeguts amb la  constant
+adult$workclass[missing_values_workclass] <- "Unknown"
+```
+
+
+### Discretizació d´atributs
+
+El següent pas seria discretitzar els atributs del nostre conjunt de dades en el cas de que fos necessari. Per a descobrir quines dades podrien ser discretitzades farem ús de la funció `apply()` que aplicarà la composició de les funcions `lenght(unique())` a cada columna retornant el nombre de observacions diferents per a cada variable:
+
+```{r}
+# Per a quines variables tindria sentit un procés de discretització?
+apply(adult,2, function(x) length(unique(x)))
+```
+
+Segons els resultats podríem discretitzar aquelles variables amb poques classes i canviar el seu tipus a `factor`, que és la manera que té R de tractar amb les variables de tipus categòric.
+
+```{r}
+# Discretitzem les variables amb poques classes
+cols <- c('workclass', 'education', 'marital-status', 'relationship', 'race',
+          'sex', 'income')
+adult <- mutate_at(adult, cols, as.factor)
+adult
+```
+
+Fixe-mos amb el codi anterior que hem fet ús de la funció `dplyr::mutate_at`[^9] per a convertir
+les columnes de tipus `character` al tipus `factor`.
+
+[^9]: La notació `paquet::funció` és la forma explicita de cridar una funció. Amb la funció `dplyr::mutate_if()` haguéssim pogut canviar totes les columnes.
+
+
+
+
+
+### Reducció de la dimensionalitat
+
+Per a la simplificació de l´anàlisi les següents variables són descartades:
+
+```{r}
+# Reducció del nombre d´atributs
+adult$fnlwgt <- NULL
+adult$education <- NULL
+adult$relationship <- NULL
+```
+
+Els motius són els següents:
+
+* El atribut `fnlwgt` no és prou descriptiu per si mateix i no disposem de documentació 
+del conjunt de dades.
+
+* El atribut `education` pot ser el.limitat, ja que es pot conèixer pel nombre d´anys de 
+formació acadèmica. En el conjunt de dades representat per la variable `education-num`.
+
+* El atribut `relationship` pot ser el.limiat, degut a que es pot estimar a partir del gènere i
+l´estat civil. En el conjunt de dades representat per `marital-status` i `sex`, respectivament.
+
+
+
+### Exploració visual de les dades (EDA)
+
+La primera variable de l´anàlisi és `age` que es tracta d´una variable continua. 
+Podríem realitzar els següents histogrames que analitzen la correlació entre aquesta
+variable i la variable categòrica `income`:
+
+```{r}
+# Histograma de la edat per grup d´ingresos
+ggplot(data = adult, mapping = aes(x = age)) + 
+  geom_freqpoly(mapping = aes(color = income), binwidth = 5)
+```
+
+
+```{r}
+# Histograma de la edat per grup de gènere
+ggplot(data = adult, mapping = aes(x = age)) + 
+  geom_freqpoly(mapping = aes(color = sex), binwidth = 5)
+```
+
+
+El primer histograma ens indica que la majoria d´observacions reben una retribució per baix de 
+50.000$ a l´any. A més, aquells que reben una remuneració de més de 50.000 es troben a la mitat
+de la seva carrera professional.
+
+Per altra banda, en el segon histograma el pot apreciar que les dones de qualsevol edat reben
+menys ingressos que els homes. També es pot observar que aquesta diferencia augmenta a
+mesura que són més grans.
+
+
+Passem a analitzar la variable `workclass` que representa la industria en que una persona
+està treballant:
+
+```{r}
+summary(adult$workclass)
+
+```
+
+
+Podem observar que existeixen dos grups petits, `Never-worked` i `Without-pay`. Podríem
+combinar aquests grups amb `Unknowm`. A més, aquells que treballen per al govern estan
+distribuïts als grups _federal_, _state_ i _local_. Per a facilitar el anàlisi, agruparem aquestes classes en una sola que anomenarem `Government`.
+
+Per últim, aquells que són autonoms estàn distribuïts en _incorporated_ i _not incorporated_ i els combinarem en una variable amb el nom `Self-Employed`.
+
+Per altra banda, cal anomenar que farem ús del paquet `forcats`que ens ajudarà a combinar les 
+variables:
+
+
+```{r  message=FALSE, warning=FALSE}
+# Carreguem la llibreria
+library(forcats)
+# Combinem les classes
+adult$workclass <- fct_collapse(adult$workclass, 
+                   Unknown = c("Never-worked", "Without-pay", "Unknowm"),
+                   Government = c("Federal-gov", "Local-gov", "State-gov"),
+                   SelfEmployed = c("Self-emp-not-inc", "Self-emp-inc")
+      )
+
+```
+
+
+Un cop reduït el nombre de classes ja podem comparar les variables `workclass` i `income`:
+
+
+```{r}
+
+# Gràfic workclass vs income
+adult %>% 
+  count(workclass, income) %>% 
+    ggplot(mapping = aes(x = workclass, y = income)) +
+      geom_tile(mapping = aes(fill = n))
+```
+
+
+
+
+
+# Bibliografia
+
+
+
+[1] Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
+
+[2] Jordi Gironés Roig, Jordi Casas Roma, Julià Minguillón Alfonso, Ramon Caihuelas Quiles : Minería de Datos: Modelos y Algoritmos. Barcelona, Editorial UOC, 2017, ISBN: 978-84-9116-904-8.
+
+[3] Jiawe Han, Michellie Chamber & Jian Pei: Data mining : concepts and techniques. 3º Edition. USA, Editorial Elsevier, 2012, ISBN 978-0-12-381479-1
+
+
+
+
+
+
+
+
+
