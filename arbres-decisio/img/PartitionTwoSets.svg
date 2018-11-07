@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 19.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+     viewBox="0 0 627 117" style="enable-background:new 0 0 627 117;" xml:space="preserve">
+<desc>Los datos se dividen en dos: un conjunto grande de datos de entrenamiento y un conjunto pequeño de datos de prueba</desc>
+<style type="text/css">
+	.esp2-st0{fill-rule:evenodd;clip-rule:evenodd;fill:#4285F4;}
+	.esp2-st1{fill-rule:evenodd;clip-rule:evenodd;fill:#F4B400;}
+	.esp2-st2{fill:#424242;}
+	.esp2-st3{font-family:'Arial-BoldMT';}
+	.esp2-st4{font-size:18px;}
+</style>
+<rect x="3.8" y="3.9" class="esp2-st0" width="535.9" height="63.3"/>
+<rect x="539.7" y="3.9" class="esp2-st1" width="83" height="63.3"/>
+<text transform="matrix(1 0 0 1 154.7131 89.6104)" class="esp2-st2 esp2-st3 esp2-st4">Conjunto de entrenamiento</text>
+<text transform="matrix(1 0 0 1 539.1882 89.6104)"><tspan x="0" y="0" class="esp2-st2 esp2-st3 esp2-st4">Conjunto </tspan><tspan x="-1" y="21.6" class="esp2-st2 esp2-st3 esp2-st4">de prueba</tspan></text>
+</svg>

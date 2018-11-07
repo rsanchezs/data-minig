@@ -2,7 +2,7 @@
 output:
   word_document:
     highlight: zenburn
-    reference_docx: word-styles-reference-20.docx
+    reference_docx: word-styles-reference-26.docx
   pdf_document: default
 ---
 
@@ -13,8 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Format d´entrega 
 
-Aquest document s´ha realitzat mitjançant __Markdown__ [^1] amb l´ajuda del entorn de desenvolupament __RStudio__[^2] utilitzant les característiques que aquest ofereix per
-a la creació de documents __R__ reproduibles.
+Aquest document s´ha realitzat mitjançant __Markdown__[^1] amb l´ajuda del entorn de desenvolupament __RStudio__[^2] utilitzant les característiques que aquest ofereix per
+a la creació de documents __R__ reproduïbles.
 
 La documentació generada en la realització de la pràctica  es troba allotjada en __GitHub__ al següent repositori:
 
@@ -37,494 +37,51 @@ presentats a la PAC.
 [^2]: https://www.rstudio.com/
 [^3]: https://rmarkdown.rstudio.com/
 
-# Exercicis
 
-## Exercici 1
 
+# Exercici 1
 
-Explica el concepte de transformació de valors i dona tres exemple on es vegi la seva utilitat.
+Contextualitzeu els exemples de les següents preguntes respecte al projecte que heu definit a la PAC1. Si ho desitgeu, podeu redefinir o canviar apartats del projecte.
 
-Per __transformació de valors__ entenem modificacions dins el tipus de valors
-que poden prendre tots o alguns del atributs.
+a) Creieu que els arbres de decisió són el mètode més adequat per aconseguir els objectius que us havíeu proposat? Justifiqueu la resposta tot raonant-la.
 
-Les operacions més habituals són la __normalització__ i la __discretització__ de dades.
-Existeixen varies tècniques per a la transformació de dades, passem a examinar tres de
-les més importants. Considerarem $X$ com al valor original del atribut i ${ X }^{ * }$ com al
-valor del atribut normalitzat.
+b) Com podria ser l’arbre resultant?
 
-### Normalització per la diferència
+c) Podríeu donar, tres exemples de regles que es poguessin derivar de l’arbre de decisió del vostre projecte?
 
-La normalització per la diferència tracta de compensar l´efecte de la distància
-del valor que tractem respecte al màxim dels valors observats. Es a dir,
 
-$${ X }^{ * }\quad =\quad \frac { X\quad -\quad min(X) }{ rango(X) } =\quad \frac { X\quad -\quad min(X) }{ max(x)\quad -\quad min(x) }$$ 
+# Exercici 2
 
-__Exemple de normalització per la diferència__
+Repetiu l’exercici 2 amb algun altre conjunt de dades. Poden ser dades reals del vostre àmbit laboral o d’algun repositori de dades a Internet. Mireu per exemple: http://www.ics.uci.edu/~mlearn/MLSummary.html o d`altres repositoris ja citats Seguiu el guió proposat a la pregunta anterior. Podeu afegir nous punts com ampliació de la resposta (per exemple provar la validació creuada, el boosting, variar el prunning o provar una altra mena d’arbre…) Recordeu també que el cicle de vida dels projectes de mineria contempla retrocedir per tornar a generar el model amb dades modificades o paràmetres de l’algorisme variats si el resultat no és prou bo.
 
-Per a il·lustrar aquesta tècnica utilitzarem el conjunt de dades `cars`[^4]del següent
-llibre _"Data Mining and Predictive Analytics"_[^5]:
 
 
+## Introducció
 
-```{r eval=FALSE, warning=FALSE, message=FALSE}
+A partir del joc de dades disponible en el següent enllaç: http://archive.ics.uci.edu/ml/datasets/Adult realitzarem els passos del cicle de vida
+d´un projecte de mineria de dades per al cas d´un algorisme de classificació i més
+concretament un arbre de decisió.
 
-# Carregem les dades
-library(readr)
-cars <- read_csv("data/cars.txt")
-```
 
-[^4]: Conjunt de dades disponibles en http://www.dataminingconsultant.com
-[^5]: Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
 
-```{r echo=FALSE, warning=FALSE, message=FALSE}
-
-# Carregem les dades
-library(readr)
-cars <- read_csv("data/cars.txt")
-```
-
-
-Al  següent fragment presentem un resum estadístic de la variable `weightlbs`:
-
-```{r}
-# Resum estadístic variable `weight`
-summary(cars$weightlbs)
-```
-
-Trobem els valors màxim i mínim de la variable `weightlbs`:
-
-```{r}
-# Trobem els valors mínim i màxim de la variable `weight`
-valor_min <- min(cars$weightlbs)
-valor_max <- max(cars$weightlbs)
-```
-
-Finalment, trobem el valor normalitzat de la variable `weightlbs`:
-
-```{r}
-# Valor normalitzat mitjançant la tècnica de la diferència
-valors_norm_dif <- (cars$weightlbs - valor_min)/(valor_max - valor_min)
-head(valors_norm_dif)
-```
-
-
-### Escalat decimal
-
-La tècnica del __escalat decimal__ ens garanteix que tots els valors normalitzats
-estiguin entre -1 i 1.
-
-$${ X }_{ decimal }^{ * }\quad =\quad \frac { X }{ { 10 }^{ d } }$$
-
-on $d$ representa el nombre de dígits del valor de la dada amb el valor absolut 
-més gran.
-
-__Exemple de normalització decimal__
-
-Per a explicar aquesta tècnica seguirem treballant amb el conjunt de dades `cars`
-de l´exemple anterior:
-
-```{r}
-# Calculem el valor de decimals
-max(abs(cars$weightlbs))
-```
-
-Un cop calculat el nombre de dígits ($d$), ens trobem amb condicions de transformar
-els valors de la variable `weight`:
-
-```{r}
-# Valors transformats amb la tècnica decimal
-valors_norm_dec <- cars$weightlbs/10^4
-head(valors_norm_dec)
-```
-
-### Normalització basada en la desviació estàndard: estandardització de valors {#norm-sd}
-
-El __mètode d´estandardització de valors__ assegura que s´obtenen valors dins el
-rang escollit que tenen la propietat que la seva mitjana és zero i la seva desviació
-estàndard val 1.
-
-Es a dir, l´estandardització consisteix en la diferència entre el valor de l´atribut i la seva mitjana, dividint aquesta diferència per la desviació estàndard dels valors de l´atribut. Es a dir:
-
-$$Z-score\quad =\quad \frac { X\quad -\quad mean(X) }{ SD(X) } $$
-
-__Exemple de normalització per estandardització__
-
-En primer lloc, ens caldrà calcular la mitjana i la desviació estàndard:
-
-```{r}
-## Calculem la mitjana
-m <- mean(cars$weightlbs)
-
-## Calculem la desviació estandard
-s <- sd(cars$weightlbs)
-```
-
-Finalment, apliquem la transformació mitjançant la formula presentada anteriorment:
-
-```{r}
-# Estandardització de valors
-valors_norm_z <- (cars$weightlbs - m)/s
-head(valors_norm_z)
-```
-
-
-## Exercici 2
-
-
-Explica el concepte de reducció de nombre d’atributs i dona un exemple on es vegi la seva utilitat. De quines tècniques disposem per a comprovar que no estem perdent qualitat en aquests procés?
-
-La reducció del nombre d’atributs consisteix a trobar un subconjunt
-dels atributs originals que permeti d’obtenir models de la mateixa qualitat
-que els que s’obtindrien utilitzant tots els atributs. Aquest problema
-s’anomena __problema de la selecció òptima d’atributs__.
-
-
-Aquest problema pot tindre diferents enfocaments, com per exemple: escollir els millors atributsa partir d´un anàlisi preliminar, el.limanar atributs redundants o que aporten poca 
-informació, o reduir la dimensionalitat de les dades generant nous atributs a partir dels
-existents. En tots aquests casos, la finalitat es reduir el cost computacional per a la
-creació de models.
-
-Existeixen els següents mètodes per a tractar amb el problema de la selecció òptima
-d´atributs:
-
-* Mètodes de selecció d´atributs
-
-* Mètodes de reducció del nombre d´atributs
-
-Tot seguit explicarem en que consisteixen cada un dels mètodes i presentarem algunes
-de les tècniques més importants per a la reducció d´atributs.
-
-### Mètodes de selecció d´atributs
-
-La __selecció d´atributs__ consisteix a escollir únicament atributs que són realment 
-rellevants per a resoldre el problema, descartant aquells que no ens aporten informació
-rellevant per a resoldre el problema.
-
-Depenent de si la selecció de característiques fa ús o no de la informació del mètode
-de classificació posterior, podem definir la següent taxonomia:
-
-* Els __algoritmes filtre__ (_filter_), on els atributs o conjunt d´atributs son evaluats
-de forma independent respecte del mètode de classificació que s´utilitzarà amb posterioritat.
-
-* Els __algoritmes empotrats__ (_wrapper_), on el mètode de selecció de característiques
-utilitza el classificador que usarà amb posterioritat.
-
-A continuació passem a estudiar els diferents mètodes de selecció de característiques i els
-algoritmes utilitzats.
-
-En primer lloc, explicarem breument els mètodes per a la selecció d´atributs individuals, coneguts com a __algoritmes univariants__:
-
-* Selecció de màxima rellevància (_maxium relevance selection_), que utilitza el coeficient
-de correlació entre cada atribut.
-
-* Selecció basada en la informació mútua, mesura la informació mútua entre variables
-aleatòries que modelen cada característica i les etiquetes de classificació.
-
-* Mètodes basats en tests estadístics, apliquen tests estadístics de hipòtesi sobre les
-dades, com per exemple el __t-static__ o el __chi-square__.
-
-En segon lloc, trobem els mètodes de selecció de subconjunts d´atributs, coneguts com a
-__algoritmes multivariants__:
-
-* Recerca exhaustiva (_exhaustive search_), consisteix en definir un espai de recerca
-i avaluar, mitjançant un funció de cost, totes les possibles combinacions. Només es aplicable
-a problemes de dimensionalitat reduïda.
-
-* Selecció pas a pas (_stepwise selection_), consisteix en iterar per un algoritme en el
-que cada pas o be afegeix al conjunt d´atributs aquell atribut que augmenta el rendiment
-global del conjunt, o bé el.elimina aquell atribut que fa que el rendiment empitjori.
-
-* Ramificació i poda (_branch and bound_), consisteix en aplicar la tècnica de 
-recerca __branch and bound__.
-
-
-
-
-
-### Mètodes d´extracció d´atributs
-
-La extracció d´atributs es tracta de calcular nous atributs a partir d´existents, amb
-l´objectiu de que els nous atributs resumeixin millor la informació que contenen,
-capturant la naturalesa de la estructura subjacent en les dades.
-
-
-
-#### Anàlisi de Components Principals (PCA)
-
-L´anàlisi de components principals (_Principal Component Analysis_, PCA) ens ajuda
-a solucionar problemes de reducció de dimensionalitat i extracció de característiques
-en les nostres dades de manera automàtica. El PCA es un algoritme molt conegut en 
-l´àmbit de l`anàlisi de dades, i té moltes aplicacions diferents. Informalment, es
-pot definir com la tècnica que intenta aconseguir una representació d´un conjunt de
-dades a un espai de dimensionalitat més reduïda, minimitzant l´error quadràtic.
-
-
-__Exemple de Anàlisi de Components Principal (PCA)__
-
-Per a il.lustrar aquest exemple farem ús del _dataset_ `houses`[^6]:
-
-```{r message=FALSE}
-# Realitzem la lectura de les dades
-library(readr)
-houses <- read_delim("data/houses.csv", ";", 
-    escape_double = FALSE, col_names = FALSE, 
-    trim_ws = TRUE, skip = 1)
-```
-
-[^6]:Conjunt de dades disponible en StatLib: http://lib.stat.cmu.edu/datasets/houses.zip
-
-A continuació preparem les dades per a realitzar l`ànalisi:
-
-```{r}
-# Donem nom als atributs
-names(houses) <- c("MVAL", "MINC", "HAGE", "ROOMS", "BEDRMS", "POPN" ,
-"HHLDS", "LAT", "LONG")
-```
-
-
-A continuació normalitzem les dades amb el __mètode d´estandardització de valors__ que hem
-tractat en el [exercici 1](#norm-sd):
-
-
-```{r}
-# Estandarditzem les variables
-
-houses$MVAL_Z <- (houses$MVAL - mean(houses$MVAL))/(sd(houses$MVAL))
-houses$MINC_Z <- (houses$MINC - mean(houses$MINC))/(sd(houses$MINC))
-houses$HAGE_Z <- (houses$HAGE - mean(houses$HAGE))/(sd(houses$HAGE))
-houses$ROOMS_Z <- (houses$ROOMS - mean(houses$ROOMS))/(sd(houses$ROOMS))
-houses$BEDRMS_Z <- (houses$BEDRMS - mean(houses$BEDRMS))/(sd(houses$BEDRMS))
-houses$POPN_Z <- (houses$POPN - mean(houses$POPN))/(sd(houses$POPN))
-houses$HHLDS_Z <- (houses$HHLDS - mean(houses$HHLDS))/(sd(houses$HHLDS))
-houses$LAT_Z <- (houses$LAT - mean(houses$LAT))/(sd(houses$LAT))
-houses$LONG_Z <- (houses$LONG - mean(houses$LONG))/(sd(houses$LONG))
-
-```
-
-
-Seleccionarem una mostra aleàtoria del 90% del conjunt de dades:
-
-```{r}
-# Seleccionem aleatoriament el 90% de les dades per al joc de proves
-dist_unif <- runif(dim(houses)[1], min = 0, max = 1)
-test_houses <- houses[which(dist_unif < .1), ]
-train_houses <- houses[which(dist_unif <= .1), ]
-```
-
-
-Per a realitzar el PCA utilitzarem el paquet `psych`[^7]:
-
-```{r message=FALSE, warning=FALSE}
-# Instal.lem el paquet
-# install.packages("psych",dependencies=TRUE)
-# Carreguem el paquet en la sesió
-library(psych)
-```
-
-[^7]:Podem consultar la documentació en https://cran.r-project.org/web/packages/psych/index.html
-
-
-
-```{r}
-# Anàlisi de Components Principal (PCA)
-pca_analysis <- principal(train_houses[, c(10:17)], 
-                          nfactors = 8, 
-                          rotate = "none", 
-                          scores = TRUE)
-```
-
-
-
-
-
-
-A continuació es mostren els resultats de l`ànalisi PCA:
-
-```{r}
-# Resultas PCA
-# Valors propis (eigen)
-pca_analysis$values
-# Mostrem la matriu amb les variàncies
-pca_analysis$loadings
-```
-
-
-
-
-
-
-
-## Exercici 3
-
-De quines tècniques disposem per resoldre el problema de la possible falta de valors d’un atributs? Dona almenys un exemple de cada tècnica.
-
-
-Algunes de les opcions disponibles són les següents:
-
-1. Reemplaçar els valors desconeguts per una constant, especificada per l´analista.
-2. Reemplaçar el valor desconegut amb la mitjana (per a variables numèriques) o la moda
-(per a variables categòriques).
-3. Reemplaçar els valors desconeguts amb un valor generat aleatòriament de la distribució
-de la variable.
-
-### Reemplaçar els valors desconeguts per una constant
-
-En els següents exemples utilitzarem el _dataset_ `cars` que ja hem utilitzat en 
-apartats anteriors:
-
-```{r warning=FALSE, message=FALSE}
-# Importem les dades
-library(readr)
-cars <- read_csv("data/cars.txt")
-```
-
-Realitzem un primer contacte amb el joc de dades, visualitzant la seva estructura i els
-6 primers registres:
-
-
-```{r eval=FALSE}
-# Realitzem un exàmen preliminar del conjunt de dades
-str(cars)
-head(cars)
-```
-
-Per tal de simplificar l´exemple i millorar la llegibilitat del document només treballarem
-amb quatre variables:
-
-```{r}
-# Seleccionem les variables mpg, cubicinches, hp i brand
-my_cars <- cars[, c(1, 3, 4, 8)]
-head(my_cars)
-```
-
-
-Per tal de demostrar les diferents tècniques farem que el _dataframe_ `my_cars`
-tingui valors desconeguts:
-
-```{r}
-# Fem certs valors desconeguts
-my_cars[2, 2] <- NA
-my_cars[4, 4] <- NA
-head(my_cars)
-```
-
-Tot seguit, es mostra com reemplaçar els valors desconeguts amb constants:
-
-```{r}
-# Amb l´ajuda de un test lògic descobrim els valors desconeguts
-missing_values_cubicinches <- is.na(my_cars$cubicinches)
-missing_values_brand <- is.na(my_cars$brand)
-
-```
-
-```{r}
-# Reemplacem els valors desconeguts amb constants
-my_cars$cubicinches[missing_values_cubicinches] <- 0
-my_cars$brand[missing_values_brand] <- "Valor desconegut"
-head(my_cars)
-```
-
-
-### Reemplaçar el valor desconegut amb la mitjana
-
-A continuació es mostra un exemple de com reemplaçar valors desconeguts amb la 
-mitjana:
-
-
-```{r echo=FALSE}
-# Fem certs valors desconeguts
-my_cars[2, 2] <- NA
-my_cars[4, 4] <- NA
-```
-
-
-```{r}
-# Reemplacem els valors desconeguts amb la mitjana
-my_cars$cubicinches[missing_values_cubicinches] <- mean(na.omit(my_cars$cubicinches))
-head(my_cars)
-```
-
-
-### Reemplaçar el valor desconegut amb el valor més freqüent
-
-A diferència de altres mesures estadístiques, R no proporciona una funció definida
-per al càlcul de la moda. Es per això, que crearem una funció per a calcular el valor
-més freqüent en un conjunt de dades. Aquesta funció pren com a argument un vector i 
-retorna el valor més freqüent:
-
-
-```{r}
-# Funció per al càlcul de la moda
-getmode <- function(v) {
-   uniqv <- unique(v)
-   uniqv[which.max(tabulate(match(v, uniqv)))]
-}
-```
-
-```{r}
-# Trobem el valor més freqüent
-moda <- getmode(my_cars$brand)
-moda
-```
-
-```{r}
-# Reemplacem els valors desconeguts amb la moda
-my_cars$brand[missing_values_brand] <- moda
-head(my_cars)
-```
-
-### Reemplaçar amb un valor aleàtori de la distribució de la variable
-
-Per últim, a continuació es mostra un exemple de com reemplaçar amb un valor
-aleatori de la distribució de la variable:
-
-
-```{r echo=FALSE}
-# Fem certs valors desconeguts
-my_cars[2, 2] <- NA
-my_cars[4, 4] <- NA
-```
-
-```{r}
-# Generem observacions aleàtories
-random_cubinches_obs <- sample(na.omit(my_cars$cubicinches), 1)
-random_brand_obs <- sample(na.omit(my_cars$brand), 1)
-random_cubinches_obs
-random_brand_obs
-```
-
-
-```{r}
-# Reemplacem els valors desconeguts amb les observacions aleàtories
-my_cars$cubicinches[missing_values_cubicinches] <- random_cubinches_obs
-my_cars$brand[missing_values_brand] <- random_brand_obs
-head(my_cars)
-```
-
-
-## Exercici 4
-
-A partir del joc de dades disponible en el següent enllaç: http://archive.ics.uci.edu/ml/datasets/Adult realitza un estudi similar al que se ha realitzat amb el joc de dades “Titanic”. Explica  el procés que has seguit, quin coneixement has extret, quins objectius t’havies fixat i quins passos i tècniques has emprat.
-
-
-### Carrega i exàmen preliminar del conjunt de dades
+## Carrega i exàmen preliminar del conjunt de dades
 
 En primer lloc, instal.larem el paquet `readr`[^8] que forma part del ecosistema `tidyverse`[^9] i que ens permetrà llegir les dades:
 
 
-```{r}
+```{r eval=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
 # La forma més sencilla de instal.lar readr es instal.lar tidyverse
-##install.packages("tidyverse")
+install.packages("tidyverse")
 
 # Alternativament, podem instal.lar només readr
-##install.packages("readr")
+install.packages("readr")
 ```
 
 Un cop instal.lat el paquet el carregarem a la sessió R mitjançant la següent línia de codi:
 
 ```{r message=FALSE, warning=FALSE}
 # Carrega de readr
-##library(readr)
+library(readr)
 
 # Alternativament, com que forma part de tidyverse
 library(tidyverse)
@@ -544,6 +101,7 @@ les dades des de l´adreça utilitzarem la funció `read_csv()`:
 adult <- read_csv("http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data")
 ```
 
+
 Convertim el conjunt de dades `adult` que és del tipus `data.frame` a `tibble`:
 
 ```{r}
@@ -551,7 +109,7 @@ Convertim el conjunt de dades `adult` que és del tipus `data.frame` a `tibble`:
 as_tibble(adult)
 ```
 
-Podem adonar-nos que, el conjunt de dades esta format per 32.560 observacions i 15 variables. A més, amb l´ajuda de `tibble` també podem observar el tipus per a cada columna.
+Podem adonar-nos que, el conjunt de dades està format per 32.560 observacions i 15 variables. A més, amb l´ajuda de `tibble` també podem observar el tipus per a cada columna.
 
 
 Com que el nom de les columnes es poc descriptiu per alguns dels atributs, personalitzarem
@@ -574,7 +132,7 @@ colnames(adult)
 [^9]: Conjunt de paquets R per a la Ciència de les Dades :https://www.tidyverse.org/
 
 
-### Exploració i tractament de valors desconeguts
+## Exploració i tractament de valors desconeguts
 
 
 En tercer lloc, ens caldria comprovar que el nostre conjunt de dades no conté valors
@@ -582,13 +140,10 @@ desconeguts:
 
 ```{r}
 # Estadístiques de valors buits.
-sapply(adult, function(x) sum(is.na(x)))
-# Alternativament
 colSums(is.na(adult))
 ```
 
-Passem a analitzar la variable `workclass` que representa la industria en que una persona
-està treballant:
+Encara que el fragment de codi anterior ens indica que no existeix cap valor `NA` en el conjunt de valors per a cada atribut del nostre conjunt de dades, passem a analitzar la variable `workclass` que representa la industria en que una persona està treballant:
 
 ```{r}
 # Resum dels valors que conté la variable workclass
@@ -607,86 +162,41 @@ adult$workclass[missing_values_workclass] <- "Unknown"
 ```
 
 
-### Discretizació d´atributs
-
-El següent pas seria discretitzar els atributs del nostre conjunt de dades en el cas de que fos necessari. Per a descobrir quines dades podrien ser discretitzades farem ús de la funció `apply()` que aplicarà la composició de les funcions `lenght(unique())` a cada columna retornant el nombre de observacions diferents per a cada variable:
+De la mateixa manera, la variable `occupation` també utilitza el caracter `?` per a representar els valors desconeguts. Com en el cas anterior substituirem aquest `?` per la constant `Unknown`:
 
 ```{r}
-# Per a quines variables tindria sentit un procés de discretització?
-apply(adult,2, function(x) length(unique(x)))
+# Amb l´ajuda de un test lògic descobrim els valors desconeguts
+missing_values_occupation <- adult$occupation == "?"
+# Reemplacem els valors desconeguts amb la  constant
+adult$occupation[missing_values_occupation] <- "Unknown"
 ```
 
-Segons els resultats podríem discretitzar aquelles variables amb poques classes i canviar el seu tipus a `factor`, que és la manera que té R de tractar amb les variables de tipus categòric.
+
+
+## Transformació d´atributs
+
+Per a facilitar l´ànalisi sería convenient canviar els atributs de tipus `character` a `factor`,
+que és la manera que té R de tractar amb les variables de tipus categòric:
+
 
 ```{r}
-# Discretitzem les variables amb poques classes
+# Canviem les variables de tipus `character` a `factor`
 cols <- c('workclass', 'education', 'marital-status', 'relationship', 'race',
-          'sex', 'income')
+          'sex', 'income', 'native-country')
 adult <- mutate_at(adult, cols, as.factor)
-adult
 ```
 
-Fixe-mos amb el codi anterior que hem fet ús de la funció `dplyr::mutate_at`[^9] per a convertir
-les columnes de tipus `character` al tipus `factor`.
+Fixe-mos amb el codi anterior que amb l´ajuda de la funció `dplyr::mutate_at`[^10] hem canviat les columnes de tipus `character` al tipus `factor`. 
 
-[^9]: La notació `paquet::funció` és la forma explicita de cridar una funció. Amb la funció `dplyr::mutate_if()` haguéssim pogut canviar totes les columnes.
-
-
-
-
-
-### Reducció de la dimensionalitat
-
-Per a la simplificació de l´anàlisi les següents variables són descartades:
+Amb el següent fragment de codi i amb l´ajuda de la funció `lapply()` verifiquem que s´han produït els canvis:
 
 ```{r}
-# Reducció del nombre d´atributs
-adult$fnlwgt <- NULL
-adult$education <- NULL
-adult$relationship <- NULL
-```
-
-Els motius són els següents:
-
-* El atribut `fnlwgt` no és prou descriptiu per si mateix i no disposem de documentació 
-del conjunt de dades.
-
-* El atribut `education` pot ser el.limitat, ja que es pot conèixer pel nombre d´anys de 
-formació acadèmica. En el conjunt de dades representat per la variable `education-num`.
-
-* El atribut `relationship` pot ser el.limiat, degut a que es pot estimar a partir del gènere i
-l´estat civil. En el conjunt de dades representat per `marital-status` i `sex`, respectivament.
-
-
-
-### Exploració visual de les dades (EDA)
-
-La primera variable de l´anàlisi és `age` que es tracta d´una variable continua. 
-Podríem realitzar els següents histogrames que analitzen la correlació entre aquesta
-variable i la variable categòrica `income`:
-
-```{r}
-# Histograma de la edat per grup d´ingresos
-ggplot(data = adult, mapping = aes(x = age)) + 
-  geom_freqpoly(mapping = aes(color = income), binwidth = 5)
+# Retorna el tipus de cada variable
+lapply(adult, class)
 ```
 
 
-```{r}
-# Histograma de la edat per grup de gènere
-ggplot(data = adult, mapping = aes(x = age)) + 
-  geom_freqpoly(mapping = aes(color = sex), binwidth = 5)
-```
-
-
-El primer histograma ens indica que la majoria d´observacions reben una retribució per baix de 
-50.000$ a l´any. A més, aquells que reben una remuneració de més de 50.000 es troben a la mitat
-de la seva carrera professional.
-
-Per altra banda, en el segon histograma el pot apreciar que les dones de qualsevol edat reben
-menys ingressos que els homes. També es pot observar que aquesta diferencia augmenta a
-mesura que són més grans.
-
+[^10]: La notació `paquet::nom_funció` s´utilitza per a indicar a R que es vol fer ús de la funció del paquet indicat, en el cas que existeixi ambigüitat amb el nom d´una funció en un altre paquet.
 
 Passem a analitzar la variable `workclass` que representa la industria en que una persona
 està treballant:
@@ -697,13 +207,15 @@ summary(adult$workclass)
 ```
 
 
-Podem observar que existeixen dos grups petits, `Never-worked` i `Without-pay`. Podríem
-combinar aquests grups amb `Unknowm`. A més, aquells que treballen per al govern estan
-distribuïts als grups _federal_, _state_ i _local_. Per a facilitar el anàlisi, agruparem aquestes classes en una sola que anomenarem `Government`.
+Podem observar que existeixen dos grups petits, `Never-worked` i `Without-pay`. Podríem combinar aquests grups amb `Unknowm`. 
 
-Per últim, aquells que són autonoms estàn distribuïts en _incorporated_ i _not incorporated_ i els combinarem en una variable amb el nom `Self-Employed`.
+A més, aquells que treballen per al govern estan
+distribuïts entre els grups _federal_, _state_ i _local_. Per a facilitar el anàlisi, agruparem aquestes classes en una sola que anomenarem `Government`.
 
-Per altra banda, cal anomenar que farem ús del paquet `forcats`que ens ajudarà a combinar les 
+Per últim, aquells que són autònoms està distribuïts en _incorporated_ i _not incorporated_, 
+en aquest cas els combinarem en una variable amb el nom `Self-Employed`.
+
+D´altra banda, cal anomenar que farem ús del paquet `forcats` que ens ajudarà a combinar les 
 variables:
 
 
@@ -712,26 +224,671 @@ variables:
 library(forcats)
 # Combinem les classes
 adult$workclass <- fct_collapse(adult$workclass, 
-                   Unknown = c("Never-worked", "Without-pay", "Unknowm"),
-                   Government = c("Federal-gov", "Local-gov", "State-gov"),
-                   SelfEmployed = c("Self-emp-not-inc", "Self-emp-inc")
+             Unknown = c("Never-worked", "Without-pay", "Unknowm"),
+             Government = c("Federal-gov", "Local-gov", "State-gov"),
+             SelfEmployed = c("Self-emp-not-inc", "Self-emp-inc")
       )
 
 ```
 
 
-Un cop reduït el nombre de classes ja podem comparar les variables `workclass` i `income`:
+Amb el següent fragment de codi podem comprovar que hem reduït el nombre de classes de la variable `workclass` com era el nostre propòsit:
 
 
 ```{r}
-
-# Gràfic workclass vs income
-adult %>% 
-  count(workclass, income) %>% 
-    ggplot(mapping = aes(x = workclass, y = income)) +
-      geom_tile(mapping = aes(fill = n))
+levels(adult$workclass)
 ```
 
+
+De la mateixa manera la variable `occupation` disposa de moltes classes com
+podem comprovar amb la següent instrucció:
+
+```{r}
+unique(adult$occupation)
+```
+
+Amb la intenció de simplificar el nostre model, reduirem en nombre de classes per aquest atribut a: `Blue-Collar`[^11], `Professional`, `Sales`, `Service` i `White-Collar`[^12]:
+
+```{r}
+# Combinem les classes
+adult$occupation <- fct_collapse(adult$occupation, 
+                   WhiteCollar = c("Adm-clerical", "Exec-managerial"),
+                   BlueCollar = c("Craft-repair", "Farming-fishing", "Handlers-cleaners", "Machine-op-inspct", "Transport-moving"),
+                   Service = c("Other-service", "Other-service", "Protective-serv", "Priv-house-serv", "Tech-support"),
+                   Professional = c("Prof-specialty"),
+                   Unknown = c("Armed-Forces" )
+      )
+
+```
+
+Com a resultat del codi anterior obtenim com la següent classificació:
+
+```{r}
+summary(adult$occupation)
+```
+
+
+[^11]: Aquest terme en àngles s´utilitza per a treballadors, com per exemple: obrers, operaris, peons, etc.
+[^12]: Treballadors que realitzen tasques d´oficina.
+
+
+Per últim, la variable `marital-status` conté en total set categories que ens indica l´estat civil de les observacions:
+
+```{r}
+summary(adult$`marital-status`)
+```
+
+De fet, podem reduir el nombre de classes a cinc de la següent manera:
+
+```{r}
+# Combinem les classes
+adult$`marital-status` <- fct_collapse(adult$`marital-status`, 
+                   Married = c("Married-spouse-absent", "Married-AF-spouse", "Married-civ-spouse"),
+                   Single = c("Never-married")
+       
+      )
+
+```
+
+
+Es pot observar que hem agrupat les observacions de tots els casats en  una sola variable que hem anomenat `Married` i hem classificat aquells que no s´han casat mai com a `Single`:
+
+```{r}
+# Resúm estadístic de la variable `marital-status`
+summary(adult$`marital-status`)
+```
+
+
+## Reducció de la dimensionalitat
+
+Per a la simplificació de l´anàlisi les següents variables són descartades:
+
+```{r}
+# Reducció del nombre d´atributs
+adult$fnlwgt <- NULL
+adult$education <- NULL
+adult$relationship <- NULL
+adult$`hour-per-week` <- NULL
+```
+
+Els motius són els següents:
+
+* La variable `fnlwgt` no és prou descriptiva per si mateixa i no disposem de documentació 
+del conjunt de dades.
+
+* La variable `education` pot ser el.liminada, ja que es pot conèixer pel nombre d´anys de 
+formació acadèmica. En el conjunt de dades representat per la variable `education-num`.
+
+* La variable `relationship` pot ser el.liminada, degut a que es pot estimar a partir del gènere i l´estat civil. En el conjunt de dades representat per `marital-status` i `sex`, respectivament.
+
+Pel que fa, a la variable `capital-gain` podem observar que la majoria d´observacions tenen com a valor zero, és a dir la següent instrucció ens indica que el 91% de les observacions del conjunt de dades son igual a zero:
+
+```{r}
+sum(adult$`capital-gain` == 0)/length(adult$`capital-gain`)
+```
+
+Vegem-ho de manera gràfica amb un histograma:
+
+```{r}
+# Histograma de `capital-gain`
+ggplot(data = adult, mapping = aes(x = `capital-gain`)) + 
+  geom_freqpoly(mapping = aes(color = income), binwidth = 1000)
+```
+
+Igual com passava amb la variable `capital-gain` succeeix el mateix que amb la variable `capital-loss`, com es pot veure a continuació:
+
+```{r}
+sum(adult$`capital-loss` == 0)/length(adult$`capital-loss`)
+```
+
+
+```{r}
+# Histograma de `capital-loss`
+ggplot(data = adult, mapping = aes(x = `capital-loss`)) + 
+  geom_freqpoly(mapping = aes(color = income), binwidth = 300)
+```
+
+
+Per aquest motiu, també eliminarem aquestes variables de l´ànalisi:
+
+```{r}
+# Eliminem les variables `capital-gain` i `capital-loss` de `adult`
+adult$`capital-gain` <- NULL
+adult$`capital-loss` <- NULL
+```
+
+Finalment, la variable `native-country` presenta una distribució molt sesgada agrupant la majoria de les observacions en el valor __USA__:
+
+```{r}
+summary(adult$`native-country`)
+```
+
+Tot seguit es mostra un diagrama de barres de la distribució de la variable `native-country`:
+
+
+```{r}
+# Gràfic barra `native-country` vs income
+adult %>% 
+  group_by(`native-country`) %>% 
+   count(income) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+      ggplot(mapping = aes(x = `native-country`, y = n, fill = income)) +
+      geom_bar(stat = "identity") +
+      theme(axis.text.x = element_text (size = 8, angle=90))
+```
+
+
+És per això que, també eliminarem la variable del nostre anàlisis:
+
+```{r}
+# Eliminem la variable `native-country` del conjunt de dades `adult`
+adult$`native-country` <- NULL
+```
+
+
+
+## Exploració visual de les dades (EDA)
+
+La primera variable de l´anàlisi és `age` que es tracta d´una variable continua. 
+Podríem realitzar el següent histograma per comprovar la correlació entre aquesta
+variable i la variable categòrica `income`:
+
+```{r}
+# Histograma de la edat per grup d´ingresos
+ggplot(data = adult, mapping = aes(x = age)) + 
+  geom_freqpoly(mapping = aes(color = income), binwidth = 5)
+```
+
+Com podem observar, la distribució de la variable ens indica que la majoria 
+d´observacions reben una retribució per baix de 50.000$ a l´any. A més, aquells que reben una 
+remuneració de més de 50.000 es troben a la mitat de la seva carrera professional. Podem confirmar
+aquesta afirmació realitzant el càlcul de la següent manera:
+
+```{r}
+adult %>% 
+  count(income)
+```
+
+
+
+En segon lloc, passem a estudiar la distribució de la variable `age` agrupada per gènere:
+
+```{r}
+# Histograma de la edat per grup de gènere
+ggplot(data = adult, mapping = aes(x = age)) + 
+  geom_freqpoly(mapping = aes(color = sex), binwidth = 5)
+```
+
+L'histograma anterior ens mostra que hi ha més nombre d'homes que de dones treballant i que
+aquesta diferència augmenta amb l'edat.
+
+
+En tercer lloc, passem a estudiar la variable `workclass` respecte a `income`. Per tal d´explorar la relació entre aquestes variables realitzarem les següents operacions:
+
+- Agrupar el conjunt de dades per la variable `workclass`.
+- Contar el nombre d´observacions de la variable `income` que apareixen en cada classe del atribut `workclass`.
+- Calcular el percentatge en cada classe segons la variable `income`.
+
+Totes aquestes operacions queden simplificades amb l´ajuda de les funcions `group_by` i `count` del paquet `dplyr`, i de l´operador ` %>% `:
+
+
+```{r}
+# Gràfic barra workclass vs income
+adult %>% 
+  group_by(workclass) %>% 
+   count(income) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = workclass, y = n, fill = income)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%")))
+
+```
+
+
+Podem concloure que aquells que són autònoms (variable `SelfEmployed`) tenen
+la tendència més alta de guanyar més de 50.000$ per any.
+
+Prosseguim el nostra anàlisi amb la variable `education`. Com que la variable `education-num` es un representació continua de la variable `education`, utilitzarem un gràfic de barres apilat per tal de visualitzar la relació amb `income`:
+
+```{r}
+# Gràfic barra education vs income
+adult %>% 
+  group_by(`education-num`) %>% 
+   count(income) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = `education-num`, y = n, fill = income)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%")), size = 2)
+```
+
+
+Com era d´esperar quant més anys d´estudi més ingressos i és a partir dels nous anys d´estudi (equivalent a estudis universitaris) quan apareixen ingressos per damunt de 50.000$/any. En contrast amb aquells que tenen un nivell menor d´estudi, on menys del 10% tenen uns ingressos superiors per damunt de 50.000. Per contra, cal destacar que tres de cada quatre que tenen estudis universitaris equivalents a doctorat guanyen més de 50.000 a l´any.
+
+
+Avançant en el nostre anàlisi, passem a examinar la covariació entre les variables `occupation` i `income`:
+
+```{r}
+# Gràfic barra occupation vs income
+adult %>% 
+  group_by(occupation) %>% 
+   count(income) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = occupation, y = n, fill = income)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%")), size = 3) +
+    theme(axis.text.x = element_text (size = 12, angle=45))
+```
+
+Podem adonar-nos que els ingressos varien segons el sector. Prop de la meitat dels treballadors professionals obtenen uns ingressos superiors a 50.000$ a l´any, al contrari dels treballadors del sector servei en què només un 13% obtenen sous superiors a 50.000 dòlars.
+
+
+Pel que fa a la variable `marital-status` també utilitzarem un diagrama de barres per a comprovar la covariació amb `income` com hem fet fins ara:
+
+
+```{r}
+# Gràfic barra marital-status vs income
+adult %>% 
+  group_by(`marital-status`) %>% 
+  count(income) %>% 
+  mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+  ggplot(mapping = aes(x = `marital-status`, y = n, fill = income)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste(freq, "%")), size = 3)
+```
+
+En el cas concret de l´estat civil de les observacions, podem observar clarament que quasi la meitat dels que estan casats obtenen ingressos 
+superiors a 50.000$ a l´any.
+
+
+En darrer lloc, estudiarem la correlació de la variable `race` amb la variable `income`:
+
+```{r}
+# Gràfic `race` vs income
+adult %>% 
+  group_by(race) %>% 
+   count(income) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = race, y = n, fill = income)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%")), size = 2) +
+    theme(axis.text.x = element_text (size = 12, angle=45))
+```
+
+
+Malauradament, i com era esperar tot i estan al segle XXI, igual com passava amb el
+gènere també existeixen grans diferències amb les diferents classificacions dels éssers
+humans representats per la variable `race`. 
+
+
+Recapitulant, després d´haver realitzat l`ànalisi de les diferents variables només hem
+escollit com a descriptores per al nostre model les que se mostren a continuació:
+
+```{r}
+# Resum estadístic `adult`
+summary(adult)
+```
+
+__NOTA:__ Amb l´objectiu de simplificar l´ànalisi reduirem la dimensionalitat del conjunt
+de dades a tres atributs i al 10% d´observacions:
+
+
+
+```{r}
+# Reducció de la dimensionalitat
+adult <- adult %>% select(workclass, `marital-status`, occupation, income) %>% 
+              sample_frac(size = 0.1, replace = TRUE)
+summary(adult)
+```
+
+
+
+## El paquet Caret
+
+Per a la realització del model predictiu utilitzarem el paquet `caret`[^15] (acrònim per a
+__C__ lassification __A__ nd __RE__ gression __T__ raining). Aquest paquet es un 
+_framework_ amb un conjunt de funcions que pretén optimitzar el procés de la creació
+de models predictius. Aquest paquet conté eines per a:
+
+* Divisió del conjunt de dades.
+* Pre-processament de dades.
+* Selecció d´atributs.
+* _Model tunning_[^16] mitjançant remostreig.
+* Estimació de la importància de les variables.
+
+
+En primer lloc, caldrà instal·lar el paquet des del repositori CRAN:
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+install.packages("caret", dependencies = TRUE)
+```
+
+A més, ens caldrà instal.lar els següents paquets:
+
+* El paquet `RWeka` que implementa l´algoritme C4.5.
+* El paquet `C50` es tracta d´una implementació més moderna de l´algorisme ID3.
+* El paquet `rpart` que implementa el mètode CART.
+* El paquet `randomForest` que implementa l´agoritme de "Boscos aleatoris"[^17].
+
+
+```{r eval=FALSE, include=FALSE}
+install.packages(c("RWeka", "C50", "rpart", "randomForest"))
+```
+
+
+
+[^15]: Per a més informació: https://topepo.github.io/caret/index.html
+
+[^16]: Procés que consisteix en optimitzar els paràmetres del model amb l´objectiu 
+que l´algoritme obtingue el millor rendiment.
+
+[^17]: De l`anglés _Random Forest_. Per a més informació :https://es.wikipedia.org/wiki/Random_forest
+
+
+
+
+
+
+## Separació de dades: Conjunt d´entrenament i prova: 
+
+En aquest apartat, dividiren el conjunt de dades en dos subconjunts:
+
+__* Conjunt d´entrenamet:__ Un subconjunt per a entrenar el model.
+__* Conjunt de prova:__ Un subconjunt per a provar el model entrenat.
+  
+L´objectiu en aquesta tasca es dividir el conjunt de dades de la següent manera:
+
+![Figura 1. Divisió d´un conjunt de dades en un conjunt d´entrenament i un de prova.](img/PartitioDosConjunts.png)
+
+Cal que ens assegurem que el conjunt de prova reuneixi les següents dos condicions:
+
+* Que sigui prou gran com per generar resultats significatius des del punt de vista estadístic.
+* Que sigui representatiu de tot el conjunt de dades. En altres paraules, no triar un conjunt de prova amb característiques diferents al del conjunt d'entrenament.
+
+Si suposem que el conjunt de prova reuneix aquestes dues condicions, el nostre
+objectiu és crear un model que generalitzi les dades noves de forma correcta.
+En altres paraules, hem de aconseguir un model que no sobreajusti (en àngles, _overfitting_) les dades d'entrenament.
+
+
+La funció `createDataPartition` ens permetra crear els subconjunts de dades. 
+Per exemple, per a crear una divisió de un 80/20% del conjunt de dades `adult`:
+
+```{r message=FALSE}
+# Carreguem el paquet
+library(caret)
+set.seed(1234)
+# Creem el conjunt d´entrenament i el de prova
+inTrain <- createDataPartition(adult$income, p = 0.8, list = FALSE)
+training <- adult[inTrain, ]
+testing <- adult[-inTrain, ]
+```
+
+A continuació podem comprovar que hem obtingut un conjunt de entrenament de 2606
+observacions:
+
+```{r}
+dim(training)
+```
+
+
+
+## Entrenament de models d´arbres de decisió per a classificació 
+
+### Classificació amb C4.5 sense poda [^18]
+
+En primer lloc, anem a predir els ingresos de les observacions mitjançant l´algorisme
+C.4.5. Començarem amb un arbre sense podar cosa que, aconseguim pasant el argument
+`Weka_control(U=TRUE)` a la funció `J48()`. 
+
+A més, usem la notació `(.)` després de la
+tilde `~` per a indicar que tots els atributs són utilitzats excepte l´atribut de classe
+`income`. 
+
+Per últim, fem ús del parametre `control` per a indicar que desitjem un arbre de decisió
+sense podar (més endavant discutirem la poda):
+
+
+```{r}
+# Carreguem la llibreria
+library(RWeka)
+modelFitC45Tree <- J48(income ~ . ,data = training, control = Weka_control(U=TRUE))
+```
+
+
+Passem a continuació a visualitzar l´arbre:
+
+```{r}
+# Visualitzem l´arbre
+modelFitC45Tree
+```
+
+Com es pot comprovar l´arbre resultant consta de 26 nodes i 21 fulles. 
+
+Tot seguit, es mostra la matriu de confusió on podem comprovar com l´algorisme a 
+classificat les classes:
+
+
+```{r}
+# Obtenim la matriu de confusió
+summary(modelFitC45Tree)
+```
+
+En concret, podem observar que el 80.5% dels casos estan classificats correctament i que
+l´estadístic _kappa_ és .46, consegüentment podem considerar que es tracta d´un model
+dolent. És a saber, que en la pràctica es recomanen valors superiors a 0.60. 
+
+A continuació classificarem el conjunt de prova i assignarem les mesures d´avaluació 
+del model com un nou atribut al _dataframe_ `Predictions`:
+
+```{r}
+# Obtenim les messures d´avaluació amb el conjunt de prova
+Predictions = data.frame(matrix(nrow = nrow(testing), ncol = 0))
+Predictions$C45 = predict(modelFitC45Tree, testing)
+```
+
+
+### Classificació amb C4.5 amb poda
+
+El punt següent tracta d´arbres de decisió C4.5 amb poda:
+
+
+```{r}
+# Carreguem les llibreria
+library(RWeka)
+# Utilitzem el model c4.5 amb poda
+modelFitC45TreePruned <- J48(income ~ . ,data = training, control = Weka_control(U=FALSE))
+```
+
+En aquest cas, l´arbre és més petit amb 16 nodes i 13 fulles:
+
+```{r}
+# Visualitzem l´arbre
+modelFitC45TreePruned
+```
+
+
+
+En el següent fragment de codi obtenim la matriu de confusió on podem comprovar 
+el nombre de observacions correctament classificades i el valor  _kappa_:
+
+```{r}
+# Obtenim la matriu de confusió
+summary(modelFitC45TreePruned)
+```
+
+Igual que amb el cas anterior hem obtingut prop de un 81% d´observacions correctament classificades i
+un valor _kappa_ de aproximadament 0.45.
+
+Per acabar, de forma similar al que hem fet anteriorment classificarem el conjunt de prova i assignarem les mesures d´avaluació a `Predictions`:
+
+```{r}
+# Obtenim les messures d´avaluació amb el conjunt de prova
+Predictions$C45pr = predict(modelFitC45TreePruned, testing)
+```
+
+
+[^18]: Encara que segons la documentació `caret` soporta l´algorisme C4.5 no he
+pogut treure el model amb el _framework_. Es per això, que he utilitzat les 
+funcions propies del paquet `RWeka`.
+
+### Classificació amb C50
+
+Tot seguit passem a examinar l´algorisme de classificació C50. Aquest algorisme
+es tracta d´una implementació més moderna de l´algorisme ID3. C50 realitza _boosting_[^20], un meta-algorisme d'aprenentatge automàtic que redueix el biaix i variància.
+
+Per aquest exemple i els següents utilitzarem el _framework_ `caret`. Els dos primers
+arguments de la funció `train` són les variables predictores i el conjunt de dades
+de prova, respectivament. El tercer argument, `method`, especifica el tipus de model.
+
+N´és un bon exemple el fragment de codi següent que utilitza l´algorisme C50 implementat
+al paquet `C50`:
+
+```{r warning=FALSE, message=FALSE}
+# Utilitzem l´algoritme C50
+modelFitC50tree <- train(income ~ ., 
+                   method = "C5.0", 
+                   data = training)
+```
+
+Tot seguit es mostra la matriu de confusió:
+
+```{r}
+# Obtenim la matriu de confusió
+summary(modelFitC50tree)
+```
+
+Per acabar, crearem la entrada al dataframe `Predictions` amb les mètriques
+obtingudes del conjunt de dades de prova:
+
+```{r}
+# Obtenim les messures d´avaluació amb el conjunt de prova
+Predictions$C5.0 = predict(modelFitC50tree, testing)
+```
+
+[^20]: Informació extreta de https://es.wikipedia.org/wiki/Boosting
+
+### Classificació amb CART
+
+Tot seguit clasificarem de nou les dades d´entrenament, però aquest cop utilitzarem
+l´algoritme CART:
+
+```{r echo=FALSE}
+library(rpart)
+modelFitCART <- rpart(income ~ ., data = training, method = "class")
+```
+
+
+```{r eval=FALSE}
+# Carreguem el framework `caret`
+library(caret)
+# Utilitzem el model CART
+modelFitCART <- train(income ~ .,
+                    data = training, 
+                    method = "rpart")
+                    
+```
+
+
+En aquet cas i amb l´ajuda del paquet `rattle` podem obtindre el gràfic de 
+l´arbre de decisió:
+
+```{r message=FALSE}
+# Carreguem la llibreria `rattle`
+library(rattle)
+# Obtenim un gràfic de l´arbre
+fancyRpartPlot(modelFitCART)
+```
+
+Cal adonar-se que en aquest cas l´arbre es molt més sencill que els obtinguts amb 
+els algorismes C4.5 o C5.0.
+
+Finalment, obtenim les mesures d´avaluació del model amb el conjunt de prova i les guardem al dataframe
+`Predictions`:
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(psych)
+ProbsCART = predict(modelFitCART, training)
+PredictCART = rep(0, nrow(ProbsCART))
+PredictCART[ProbsCART[,1] <=.5] = "small"
+PredictCART[ProbsCART[,1] >.5] = "large"
+TabCART = table(training$income, PredictCART)
+cohen_kappa <- cohen.kappa(TabCART)
+```
+
+```{r}
+# Obtenim les mesures d´avaluació  amb el conjunt de prova
+ProbsCARTtest = predict(modelFitCART, testing)
+Predictions$CART[ProbsCARTtest[,1] <=.5] = "small"
+Predictions$CART[ProbsCARTtest[,1] >.5] = "large"
+```
+
+
+### Random Forest
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(randomForest)
+modelFitRandomForest <- randomForest(y = training$income,
+                                     x = training[, -4])
+```
+
+Per acabar, en aquest apartat classificarem de nou el conjunt de dades  
+d´entrenament, però en aquest aquest utilitzarem el algoritme  _Random Forest_:
+
+```{r eval=FALSE}
+# Carreguem el framework `caret`
+library(caret)
+# Utilitzem l´algoritme random forest
+modelFitRandomForest <- train(income ~ ., 
+                              data = training, 
+                              method = "rf", prox=TRUE)
+```
+
+A continuació es mostra la matriu de confusió:
+
+```{r}
+# Mostrem la matriu de confusió
+modelFitRandomForest
+```
+
+Com podem observar en els resultats aquesta classificació es pitjor encara que amb CART.
+
+Per concloure, de forma similiar als apartats anteriors obtenim els valors de les mesures
+d´avaluació del model:
+
+```{r}
+# Obtenim les mètriques d´avaluació del model amb el conjunt de proves
+Predictions$RF = predict(modelFitRandomForest, testing)
+```
+
+
+### Anàlisis de les prediccions del conjunt de prova
+
+Amb el segúent fragment de codi analitzarem quin algoritme ha obtingut millor
+prediccions en el conjunt de dades de prova:
+
+```{r collapse=FALSE}
+# Examinen les prediccions del conjunt de prova
+values = data.frame(matrix(ncol = ncol(Predictions), nrow = 6))
+rownames(values) = c("True +", "True -", "False +", "False -", "Accuracy", "Kappa")
+names(values) = names(Predictions)
+for (i in 1:ncol(Predictions)) {
+   tab = table(testing$income,Predictions[,i])
+   values[1,i] = tab[1,1]
+   values[2,i] = tab[2,2]
+   values[3,i] = tab[1,2]
+   values[4,i] = tab[2,1]
+   values[5,i] = sum(diag(tab))/sum(tab)
+   values[6,i] = cohen.kappa(tab)[1] 
+}
+round(values,2)
+```
+
+
+
+Per concloure, encara que els algoritmes han superat el 70% de precisió en la
+classificació, el valor estadístic _kappa_ no ha superat el 0.44. Aquest valor
+no és suficient, de manera que seria recomanable no utilitzar cap d'aquests algoritmes
+per a la predicció del model.
 
 
 
