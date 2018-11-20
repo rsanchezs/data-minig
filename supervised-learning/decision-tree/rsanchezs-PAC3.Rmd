@@ -2,7 +2,7 @@
 output:
   word_document:
     highlight: zenburn
-    reference_docx: word-styles-reference-26.docx
+    reference_docx: word-styles-reference-27.docx
   pdf_document: default
 ---
 
@@ -13,12 +13,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Format d´entrega 
 
-Aquest document s´ha realitzat mitjançant __Markdown__[^1] amb l´ajuda del entorn de desenvolupament __RStudio__[^2] utilitzant les característiques que aquest ofereix per
+Aquest document s´ha realitzat mitjançant __Markdown__[^1] amb l´ajuda de l´entorn de desenvolupament __RStudio__[^2] utilitzant les característiques que aquest ofereix per
 a la creació de documents __R__ reproduïbles.
 
 La documentació generada en la realització de la pràctica  es troba allotjada en __GitHub__ al següent repositori:
 
-* https://github.com/rsanchezs/dataminig
+* https://github.com/rsanchezs/data-minig
 
 En aquest repositori es poden trobar els següents fitxers:
 
@@ -45,9 +45,50 @@ Contextualitzeu els exemples de les següents preguntes respecte al projecte que
 
 a) Creieu que els arbres de decisió són el mètode més adequat per aconseguir els objectius que us havíeu proposat? Justifiqueu la resposta tot raonant-la.
 
+En relació amb el cas pràctic que vaig desenvolupar a la PAC1 es tractava d´implementar
+un _recommender system_ (de l´anglès, sistemes de recomanació). És per això que, utilitzar
+els arbres de decisió no sería un bona elecció.
+
+En canvi, l´algoritme _Nearest Neighborhood_ (de l´anglès, algoritme del veí més proper), és el 
+més utilitzat avui dia en els sistemes de recomanació.
+
+
 b) Com podria ser l’arbre resultant?
 
-c) Podríeu donar, tres exemples de regles que es poguessin derivar de l’arbre de decisió del vostre projecte?
+En aquest apartat ens proposem d´exposar un exemple simple de classificació d´arbres
+de decisió. Suposem que tenim un problema, on ens interessa un model que classifiqui
+sol·licituds de préstecs hipotecaris entre les classes __Aprovat__ i __Rebutjat__.
+
+A continuació, es mostra una taula amb el conjunt de dades. Cal recordar que es tracta
+d'un conjunt d´entrenament, on l'última columna conté la classe a què pertany
+cada observació:
+
+![Figura 1: Aprovació Prèctec Hipotecari](img/taula-exemple-credit-hipotecari.PNG)
+
+
+Les variables en aquest exemple són `Client`, que ens indica si una sol·licitud de crèdit es demana per un client del banc; la variable `Ingrés`, expressa el nivell d´ingressos de la persona que sol·licita el préstec; i la variable `Historial`, manifesta el comportament creditici del client en el passat.
+
+Per il·lustrar, a continuació es mostra un arbre de decisió que en podria ser un exemple de resolució del nostre problema:
+
+![Figura 2: Exemple d´arbre de decisió](img/exemple-arbre-decisio.png)
+
+Passem a analitzar l´arbre de decisió de la figura 2. Els nodes blaus són els nodes interns i els nodes de color roig i verds són les fulles de l´arbre. En general, cada node intern d´un arbre
+de decisió representa una variable (o atribut) en el nostre conjunt de dades. Per exemple, el node
+__Client__, fa referència a la variable `Client` que correspon a la primera columna del nostre conjunt de dades (vegeu figura 1).
+
+Cada branca que surt dels nodes representa cada un dels possibles valors que pot prendre el node. Per exemple, el node que fa referencia a la variable `Historial` pot pendre els valos __Bo__ ó __Dolent__.
+
+Cada node realitza una pregunta basada en els valors que l'atribut pot suportar i, depenent
+d´aquest resultat l´arbre ens indica el camí a seguir. En el cas concret del node __Historial__ realitza la pregunta si el valor de la variable és bo o dolent. Si és bo, el recorregut per l´arbre continua per l'esquerra; altrament continua per la dreta.
+
+Les fulles corresponen al resultat final de la classificació generada per l´arbre de decisió. En aquest sentit, si una dada arriba a la primera fulla verda de l'esquerra, significa que la classificació de la dada es __Aprovat__.
+
+Per posar un exemple de com classificar una nova data, suposem que la data és una persona que
+és client, té un bon historial i ingressos alts. A la figura 3 es mostra el recorregut per l'arbre:
+
+![Figura 3: Classificació de una nova dada.](img/exemple-arbre-decisio-recorregut.png)
+
+
 
 
 # Exercici 2
@@ -558,7 +599,7 @@ de models predictius. Aquest paquet conté eines per a:
 
 En primer lloc, caldrà instal·lar el paquet des del repositori CRAN:
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE}
 install.packages("caret", dependencies = TRUE)
 ```
 
@@ -570,7 +611,7 @@ A més, ens caldrà instal.lar els següents paquets:
 * El paquet `randomForest` que implementa l´agoritme de "Boscos aleatoris"[^17].
 
 
-```{r eval=FALSE, include=FALSE}
+```{r eval=FALSE}
 install.packages(c("RWeka", "C50", "rpart", "randomForest"))
 ```
 
@@ -592,12 +633,12 @@ que l´algoritme obtingue el millor rendiment.
 
 En aquest apartat, dividiren el conjunt de dades en dos subconjunts:
 
-__* Conjunt d´entrenamet:__ Un subconjunt per a entrenar el model.
-__* Conjunt de prova:__ Un subconjunt per a provar el model entrenat.
+* Conjunt d´entrenamet: Un subconjunt per a entrenar el model.
+* Conjunt de prova: Un subconjunt per a provar el model entrenat.
   
 L´objectiu en aquesta tasca es dividir el conjunt de dades de la següent manera:
 
-![Figura 1. Divisió d´un conjunt de dades en un conjunt d´entrenament i un de prova.](img/PartitioDosConjunts.png)
+![Figura 4. Divisió d´un conjunt de dades en un conjunt d´entrenament i un de prova.](img/PartitioDosConjunts.png)
 
 Cal que ens assegurem que el conjunt de prova reuneixi les següents dos condicions:
 
@@ -633,7 +674,8 @@ dim(training)
 
 ## Entrenament de models d´arbres de decisió per a classificació 
 
-### Classificació amb C4.5 sense poda [^18]
+### Classificació amb C4.5 [^18]
+#### Classificació C4.5 sense poda
 
 En primer lloc, anem a predir els ingresos de les observacions mitjançant l´algorisme
 C.4.5. Començarem amb un arbre sense podar cosa que, aconseguim pasant el argument
@@ -650,6 +692,7 @@ sense podar (més endavant discutirem la poda):
 ```{r}
 # Carreguem la llibreria
 library(RWeka)
+# Execució de l´algorisme de classificació C4.5 sense poda
 modelFitC45Tree <- J48(income ~ . ,data = training, control = Weka_control(U=TRUE))
 ```
 
@@ -686,7 +729,7 @@ Predictions$C45 = predict(modelFitC45Tree, testing)
 ```
 
 
-### Classificació amb C4.5 amb poda
+#### Classificació C4.5 amb poda
 
 El punt següent tracta d´arbres de decisió C4.5 amb poda:
 
@@ -694,17 +737,17 @@ El punt següent tracta d´arbres de decisió C4.5 amb poda:
 ```{r}
 # Carreguem les llibreria
 library(RWeka)
-# Utilitzem el model c4.5 amb poda
+# Execució model c4.5 amb poda
 modelFitC45TreePruned <- J48(income ~ . ,data = training, control = Weka_control(U=FALSE))
 ```
 
 En aquest cas, l´arbre és més petit amb 16 nodes i 13 fulles:
 
+
 ```{r}
 # Visualitzem l´arbre
 modelFitC45TreePruned
 ```
-
 
 
 En el següent fragment de codi obtenim la matriu de confusió on podem comprovar 
@@ -718,7 +761,7 @@ summary(modelFitC45TreePruned)
 Igual que amb el cas anterior hem obtingut prop de un 81% d´observacions correctament classificades i
 un valor _kappa_ de aproximadament 0.45.
 
-Per acabar, de forma similar al que hem fet anteriorment classificarem el conjunt de prova i assignarem les mesures d´avaluació a `Predictions`:
+Per acabar, de forma similar al que hem fet anteriorment classificarem el conjunt de prova i assignarem els indicadors de rendiment a `Predictions`:
 
 ```{r}
 # Obtenim les messures d´avaluació amb el conjunt de prova
@@ -743,7 +786,7 @@ N´és un bon exemple el fragment de codi següent que utilitza l´algorisme C50
 al paquet `C50`:
 
 ```{r warning=FALSE, message=FALSE}
-# Utilitzem l´algoritme C50
+# Execució l´algoritme C50
 modelFitC50tree <- train(income ~ ., 
                    method = "C5.0", 
                    data = training)
@@ -755,6 +798,8 @@ Tot seguit es mostra la matriu de confusió:
 # Obtenim la matriu de confusió
 summary(modelFitC50tree)
 ```
+
+
 
 Per acabar, crearem la entrada al dataframe `Predictions` amb les mètriques
 obtingudes del conjunt de dades de prova:
@@ -780,7 +825,7 @@ modelFitCART <- rpart(income ~ ., data = training, method = "class")
 ```{r eval=FALSE}
 # Carreguem el framework `caret`
 library(caret)
-# Utilitzem el model CART
+# Execució  model CART
 modelFitCART <- train(income ~ .,
                     data = training, 
                     method = "rpart")
@@ -801,7 +846,7 @@ fancyRpartPlot(modelFitCART)
 Cal adonar-se que en aquest cas l´arbre es molt més sencill que els obtinguts amb 
 els algorismes C4.5 o C5.0.
 
-Finalment, obtenim les mesures d´avaluació del model amb el conjunt de prova i les guardem al dataframe
+Finalment, obtenim els indicadors de rendiment del model amb el conjunt de prova i els guardem al dataframe
 `Predictions`:
 
 
@@ -837,7 +882,7 @@ d´entrenament, però en aquest aquest utilitzarem el algoritme  _Random Forest_
 ```{r eval=FALSE}
 # Carreguem el framework `caret`
 library(caret)
-# Utilitzem l´algoritme random forest
+# Executem l´algoritme random forest
 modelFitRandomForest <- train(income ~ ., 
                               data = training, 
                               method = "rf", prox=TRUE)
@@ -863,24 +908,35 @@ Predictions$RF = predict(modelFitRandomForest, testing)
 
 ### Anàlisis de les prediccions del conjunt de prova
 
-Amb el segúent fragment de codi analitzarem quin algoritme ha obtingut millor
-prediccions en el conjunt de dades de prova:
+Amb la següent funció obtindrem les diferents mesures d´avaluació dels models 
+estudiats en aquest text. Així com, un resúm en forma de taula de les diferents
+mètriques obtingudes per a cada algoritme:
+
+```{r}
+# Funció per a obtindre un resum amb les mesures d´avaluació dels models
+getModelPredictions <- function(Predictions) {
+  values = data.frame(matrix(ncol = ncol(Predictions), nrow = 6))
+  rownames(values) = c("True +", "True -", "False +", "False -", "Accuracy", "Kappa")
+  names(values) = names(Predictions)
+  for (i in 1:ncol(Predictions)) {
+     tab = table(testing$income,Predictions[,i])
+     values[1,i] = tab[1,1]
+     values[2,i] = tab[2,2]
+     values[3,i] = tab[1,2]
+     values[4,i] = tab[2,1]
+     values[5,i] = sum(diag(tab))/sum(tab)
+     values[6,i] = cohen.kappa(tab)[1] 
+  }
+  round(values,2)
+}
+```
+
+A continuació, es mostra la taula amb les mesures d´avaluació dels diferents models
+analitzats en la pràctica:
 
 ```{r collapse=FALSE}
-# Examinen les prediccions del conjunt de prova
-values = data.frame(matrix(ncol = ncol(Predictions), nrow = 6))
-rownames(values) = c("True +", "True -", "False +", "False -", "Accuracy", "Kappa")
-names(values) = names(Predictions)
-for (i in 1:ncol(Predictions)) {
-   tab = table(testing$income,Predictions[,i])
-   values[1,i] = tab[1,1]
-   values[2,i] = tab[2,2]
-   values[3,i] = tab[1,2]
-   values[4,i] = tab[2,1]
-   values[5,i] = sum(diag(tab))/sum(tab)
-   values[6,i] = cohen.kappa(tab)[1] 
-}
-round(values,2)
+# Mostrem en un dataframe les mesures d´avaluació
+getModelPredictions(Predictions)
 ```
 
 
