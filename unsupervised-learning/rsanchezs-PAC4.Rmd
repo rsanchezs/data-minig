@@ -88,8 +88,7 @@ library(factoextra)
 ```
 
 
-[^1]: La documentació oficial es pot trobar a: http://www.sthda.com/english/
-rpkgs/factoextra.
+[^1]: La documentació oficial es pot trobar a: http://www.sthda.com/english/rpkgs/factoextra.
 
 ## Preparació de les dades
 
@@ -106,6 +105,7 @@ estadístiques d´agressions, assassinats i violacions en cada un dels 50 estats
 1973.
 
 ```{r}
+# Carreguem les dades
 data("USArrests")
 df <- USArrests
 ```
@@ -114,7 +114,7 @@ En primer lloc, podem eliminar els valors desconeguts en el nostre conjunt de da
 com es mostra a continuació:
 
 ```{r}
-# Eliminem valor desconeguts
+# Eliminem valors desconeguts
 df <- na.omit(df)
 ```
 
@@ -140,7 +140,7 @@ El prototip de la funció es el següent:
 fviz_nbclust(x, FUNcluster, method = c("silhouette", "wss", "gap_stat"))
 ```
 
-onels arguments són els següents:
+on els arguments són els següents:
 
 * **x:** matriu o data frame.
 * **FUNcluster:** una funció d´agregació. Valors possibles: kmeans, pam, clara i hcut.
@@ -199,7 +199,7 @@ els mateixos resultats que es presenten tot seguit.
 A continuació es mostra com aplicar l´algorisme k-means amb k = 4:
 
 ```{r}
-# Computa k-means amb k = 4
+# Execució k-means amb k = 4
 set.seed(123)
 kmeansFit <- kmeans(df, 4, nstart = 25)
 ```
@@ -226,7 +226,7 @@ El problema és que el nostre conjunt de dades conté més de 2 variables i no �
 
 Una possible solució és reduir la dimensionalitat fent ús d´un algoritme de reducció del nombre d´atributs, com per exemple __Principal Component Analysis (PCA)__. 
 
-En aquest sentit, farem ús de la funció `fviz_cluster()` que ens permetrà visualitzar els clústers i que utilitza PCA quan el nombre de variables és més gran de 2. Passarem com a arguments els resultats del model i el conjunt de dades original:
+En aquest sentit, farem ús de la funció `fviz_cluster()` que ens permetrà visualitzar els clústers i que utilitza PCA quan el nombre de variables és més gran de 2. Passarem com a arguments el resultat del model i el conjunt de dades original:
 
 ```{r}
 # Visualitzem els clústers
@@ -241,6 +241,84 @@ fviz_cluster(kmeansFit, data = df,
 
 Podem observar en el gràfic que les observacions són representades mitjançant punts i que en el nostre cas s´ha usat PCA. A més, s´han dibuixat el.lipses per tal  de
 diferenciar cada clúster.
+
+# Exercici 3
+
+## Mètode d´agregació  _k-medoids_ 
+
+El següent apartat tracta del mètode d´agregació __k-medoids__ i la seva implementació mitjançant l´algoritme de __Partició al voltant de Medoids PAM)__.
+
+Igual com k-means, K-medoid és una tècnica clàssica de partició de grups que divideix les dades conformades per n objectes en k grups (amb k fixat _a priori_).
+
+És més robust davant el soroll i valors atípics que k-means perquè minimitza una suma de disimilituds (entre parells de punts) en comptes d'una suma de distàncies euclidianas quadrades.
+
+Un __medoid__ pot ser definit com l'objecte d'un grup on la seva disimilitud mitjana a tots els objectes en el grup és mínima. És el punt situat més cap al centre en tot el grup.[^2]
+
+[^2]: Per a més informació: https://es.wikipedia.org/wiki/K-medoids
+
+Per a determinar el nombre de clústers farem ús de la funció `pam()` del
+paquet `cluster`.
+
+El prototip de la funció es el següent:
+
+```{r eval=FALSE}
+pam(x, k, metric = "euclidean", stand = FALSE)
+```
+
+on els arguments són els següents:
+
+* **x:** on x pot ser:
+  + Una matriu o data frame de tipus numéric: cada fila correspon a una observació i cada columna a una variable.
+  + Una matriu de disimilituds: en aquest cas x es normalment la sortida o bé de la funció `daisy()` o bé de `dist()`.
+* **K:** el nombre de clusters.
+* **metric:** la mesura de similitud. O bé "euclidean" o bé "manhattan".
+* **stand:** un valor de tipus lògic; si es TRUE, les variables en x són estandaritzades.
+
+### Estimació del nombre òptim de clùsters
+
+Per a estimar el nombre òptim de clùsters utilitzarem la mètrica de Silhoutte. La idea central és calcular l´algoritme PAM amb diferents valors de k. Per a la realització d´aquesta tasca farem ús de la funció `fviz_nbclust()`:
+
+```{r}
+# Obtenció de k utilitzant la mètrica Silhoutte
+fviz_nbclust(df, pam, method = "silhouette")+
+  labs(x = "Nombre de particions k", y = "Ample de la mitjana de la silueta",
+       title = "Nombre òptim de particions", 
+       subtitle = "Mètode Silhouette") +
+  theme_gray()
+  
+```
+
+Segons el gràfic, el nombre òptim de clústers és 2. En la següent secció, agruparem els objectes en 2 clústers.
+
+### Càlcul del mètode PAM
+
+El següent codi calcula el mètode PAM amb k = 2:
+
+```{r}
+# Execució de l´algoritme PAM
+pamFit <- pam(df, 2)
+# Visualització de resultats
+print(pamFit)
+```
+
+Podem observar en la sortida el següent:
+
+* Els grups medoids: una matriu, on les files són els medoids i les columnes són les variables.
+* El vector de particions: un vector d´enters (de 1:k) que indica el clúster on
+cada observació ha sigut agrupada.
+
+Igual com hem fet en l´exercici anterior utilitzarem la funció `fviz_cluster()` del
+paquet `factoextra` per a visualitzar les particions:
+
+```{r}
+# Visualitzem els clústers
+fviz_cluster(pamFit,
+  palette = c("#00AFBB", "#FC4E07"), 
+  ellipse.type = "t", 
+  repel = TRUE, 
+  ggtheme = theme_gray()
+)
+```
 
 
 # Bibliografia
