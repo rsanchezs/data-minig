@@ -2,7 +2,7 @@
 output:
   word_document:
     highlight: zenburn
-    reference_docx: word-styles-reference-28.docx
+    reference_docx: word-styles-reference-33.docx
   pdf_document: default
 ---
 
@@ -41,6 +41,18 @@ presentats a la PAC.
 
 # Exercici 1
 
+En relació amb el cas pràctic que vaig desenvolupar a la PAC1 es tractava d´implementar un _recommender system_ (de l´anglès, sistemes de recomanació).
+És per això que, utilitzar els mètodes no supervistats no seria un bona elecció.
+
+Avui dia, l´algoritme _Nearest Neighborhood_ (de l´anglès, algoritme del veí més proper), és el més utilitzat avui dia en els sistemes de recomanació.
+
+Els algoritmes de veïns més pròxims s´han desenvolupat en dues perspectives possibles: recomanació de veïns pròxims per usuari i per ítem:
+
+* **Centrats en usuari _(User kNN)_:** Es recomanen a l'usuari ítems que han agradat a usuaris similars.
+
+* **Centrats en ítem _(Item kNN)_:** Es recomanen a l'usuari ítems que es pareixen
+a ítems que li han agradat.
+
 
 
 # Exercici 2
@@ -52,8 +64,9 @@ Per començar, per a la realització del nostre anàlisi necessitarem els següe
 paquets:
 
 * `cluster` per a la computació dels algoritmes d´agregació.
-* `factoextra` per a la visualitació de resultats d´agregació i que es fonamenta
+* `factoextra` per a la visualització de resultats d´agregació i que es fonamenta
 en el paquet `ggplot2`.[^1]
+* `clValid` que s´utilitza per a comparar els mètodes d´agregació.
 
 El paquet `factoextra` conté funcions per anàlisi de _clustering_ i visualització dels
 resultats:
@@ -61,13 +74,13 @@ resultats:
 | Funció | Descripció |
 |---|---|
 |`dist(fviz_dist, get_dist)`  | Visualització i computació de la matriu de distàncies |
-| `get_clust_tendency` | Avaluació de la tendencia d´agregació |
+| `get_clust_tendency` | Avaluació de la tendència d´agregació |
 | `fviz_nbclust(fviz_gap_stat)` | Determinació del nombre òptim de clústers |
 | `fviz_dend` | Visualització de dendrogrames |
 | `fviz_cluster` | Visualització dels resultats d´agrupament |
 | `fviz_mclust` | Visualització dels resultats del model d´agrupament |
 | `fviz_silhouette` | Visualització de la informació de la silueta |
-| `hkmeans` | K-means jerarquic |
+| `hkmeans` | K-means jeràrquic |
 | `eclust` | Visualització de l´anàlisi de agrupament |
 
 
@@ -75,7 +88,7 @@ Podem instal·lar els dos paquets com es mostra en la següent línia de codi:
 
 ```{r eval=FALSE}
 # Instalació paquets clustering
-install.packages(c("cluster", "factoextra"))
+install.packages(c("cluster", "factoextra", "clValid"))
 ```
 
 
@@ -85,6 +98,7 @@ En acabat, ens caldrà carregar les llibreries a la sessió R:
 # Carreguem les llibreries
 library(cluster)
 library(factoextra)
+library(clValid)
 ```
 
 
@@ -193,19 +207,19 @@ fviz_nbclust(df, kmeans, nstart = 25,
   
 ```
 
-Com podem observar en els gràfics:
-
+>Com podem observar en els gràfics:
+>
 * El mètode Elbow ens suggereix 4 clústers.
 * El mètode Silhoutte ens suggereix 2 clústers.
 * El mètode Gap ens sugereix 4 clústers.
 
-Així és que, segons aquestes observacions podem considerar k = 4 com el nombre
+Així és que, segons aquestes observacions podem considerar _k_ = 4 com el nombre
 òptim de clústers.
 
 ## Mètode d´agregació _k-means_
 
-A causa de que, l´algoritme _k-means_ comença seleccionant un centroide aleatoriament, es recomanable fer ús de la funció `set.seed()` a l´efecte de
-conseguir resultats reproduibles. Així el lector d´aquest document obtindrà
+A causa de que, l´algoritme _k-means_ comença seleccionant un centroide aleatòriament, es recomanable fer ús de la funció `set.seed()` a l´efecte de
+aconseguir resultats reproduïbles. Així el lector d´aquest document obtindrà
 els mateixos resultats que es presenten tot seguit.
 
 A continuació es mostra com aplicar l´algorisme k-means amb k = 4:
@@ -216,15 +230,15 @@ set.seed(123)
 kmeansFit <- kmeans(df, 4, nstart = 25)
 ```
 
-Podem mostrar per pantalla els resultats amb la següent línea de codi:
+Podem mostrar per pantalla els resultats amb la següent línia de codi:
 
 ```{r}
 # Mostrem els resultats
 print(kmeansFit)
 ```
 
-Podem observar en la sortida el següent:
-
+> Podem observar en la sortida el següent:
+>
 * La mitjana de clústers: una matriu, on les files són el nombre de clúster i
 les columnes són les variables.
 * El vector de particions: un vector d´enters (de 1:k) que indica el clúster on
@@ -236,7 +250,7 @@ Una possible opció és visualitzar les dades en un diagrama de dispersió acolo
 
 El problema és que el nostre conjunt de dades conté més de 2 variables i no és possible representar el model en dues dimensions.
 
-Una possible solució és reduir la dimensionalitat fent ús d´un algoritme de reducció del nombre d´atributs, com per exemple __Principal Component Analysis (PCA)__. 
+Convé fer ressaltar que, una possible solució és reduir la dimensionalitat fent ús d´un algoritme de reducció del nombre d´atributs, com per exemple __Principal Component Analysis (PCA)__. 
 
 En aquest sentit, farem ús de la funció `fviz_cluster()` que ens permetrà visualitzar els clústers i que utilitza PCA quan el nombre de variables és més gran de 2. Passarem com a arguments el resultat del model i el conjunt de dades original:
 
@@ -265,9 +279,9 @@ El següent apartat tracta del mètode d´agregació __k-medoids__ i la seva imp
 
 Igual com k-means, K-medoid és una tècnica clàssica de partició de grups que divideix les dades conformades per n objectes en k grups (amb k fixat _a priori_).
 
-És més robust davant el soroll i valors atípics que k-means perquè minimitza una suma de disimilituds (entre parells de punts) en comptes d'una suma de distàncies euclidianas quadrades.
+És més robust davant el soroll i valors atípics que k-means perquè minimitza una suma de dissimilituds (entre parells de punts) en comptes d'una suma de distàncies euclidiana quadrades.
 
-Un __medoid__ pot ser definit com l'objecte d'un grup on la seva disimilitud mitjana a tots els objectes en el grup és mínima. És el punt situat més cap al centre en tot el grup.[^2]
+Un __medoid__ pot ser definit com l'objecte d'un grup on la seva dissimilitud mitjana a tots els objectes en el grup és mínima. És el punt situat més cap al centre en tot el grup.[^2]
 
 [^2]: Per a més informació: https://es.wikipedia.org/wiki/K-medoids
 
@@ -283,17 +297,18 @@ pam(x, k, metric = "euclidean", stand = FALSE)
 on els arguments són els següents:
 
 * **x:** on x pot ser:
-  + Una matriu o data frame de tipus numéric: cada fila correspon a una observació i cada columna a una variable.
-  + Una matriu de disimilituds: en aquest cas x es normalment la sortida o bé de la funció `daisy()` o bé de `dist()`.
-* **K:** el nombre de clusters.
-* **metric:** la mesura de similitud. O bé "euclidean" o bé "manhattan".
-* **stand:** un valor de tipus lògic; si es TRUE, les variables en x són estandaritzades.
+  + Una matriu o data frame de tipus numèric: cada fila correspon a una observació i cada columna a una variable.
+  + Una matriu de dissimilituds: en aquest cas x es normalment la sortida o bé de la funció `daisy()` o bé de `dist()`.
+* **K:** el nombre de clústers.
+* **metric:** la mesura de similitud. O bé "euclidiana" o bé "manhattan".
+* **stand:** un valor de tipus lògic; si es TRUE, les variables en x són estandarditzades.
 
 ### Estimació del nombre òptim de clùsters
 
-Per a estimar el nombre òptim de clùsters utilitzarem la mètrica de Silhoutte. La idea central és calcular l´algoritme PAM amb diferents valors de k. Per a la realització d´aquesta tasca farem ús de la funció `fviz_nbclust()`:
+Per a estimar el nombre òptim de clústers utilitzarem la mètrica de Silhoutte. La idea central és calcular l´algoritme PAM amb diferents valors de k. Per a la realització d´aquesta tasca farem ús de la funció `fviz_nbclust()`:
 
 ```{r dpi=300}
+
 # Obtenció de k utilitzant la mètrica Silhoutte
 fviz_nbclust(df, pam, method = "silhouette") +
   labs(x = "Nombre de particions k", 
@@ -306,7 +321,9 @@ fviz_nbclust(df, pam, method = "silhouette") +
   
 ```
 
-Segons el gràfic, el nombre òptim de clústers és 2. En la següent secció, agruparem els objectes en 2 clústers.
+>Com podem observar en el gràfic el resultat per al mètode Silhoutte ens suggereix 2 clústers.
+
+
 
 ### Càlcul del mètode PAM
 
@@ -319,8 +336,8 @@ pamFit <- pam(df, 2)
 print(pamFit)
 ```
 
-Podem observar en la sortida el següent:
-
+> Podem observar en la sortida el següent:
+>
 * Els grups medoids: una matriu, on les files són els medoids i les columnes són les variables.
 * El vector de particions: un vector d´enters (de 1:k) que indica el clúster on
 cada observació ha sigut agrupada.
@@ -332,13 +349,183 @@ paquet `factoextra` per a visualitzar les particions:
 # Visualitzem els clústers
 fviz_cluster(pamFit,
     main = "Gràfic de clústers",
-    palette = c("#00AFBB", "#FC4E07"), 
+    palette = c("#00AFBB", "#FC4E07"),
     ellipse.type = "t", 
     repel = TRUE,
     ggtheme = theme_minimal()) + 
   theme(legend.position = "bottom",
       plot.title = element_text(color="#4F81BD", size=16, face="bold"))
 ```
+
+
+
+## El mètode aglomeradors _AGNES_
+
+En el mètode de _k-means_ sempre es comença per un nombre fix de grups coneguts
+_a priori_. Això fa que sigui útil quan tenim alguna idea de quants grups
+hi ha en realitat.
+
+Ara bé, hi ha situacions en què el nostre desconeixement del domini d’aplicació és encara més gran. Per tant, ni tan sols és possible fixar una quantitat _k_ de punts inicials entorn dels quals anar formant els grups.
+
+En aquest cas, cal reflectir aquest desconeixement adoptant una actitud neutra respecte a les dades. Una de les maneres de resoldre el problema és mitjançant els _mètodes aglomeradors_.
+
+> Els **mètodes aglomeradors** (en àngles, _Agglomerative Nesting_) comencen considerant que cada objecte forma un grup per si mateix (un grup d’un sol element) i llavors avaluen les distàncies entre grups (o objectes, en el primer pas) i creen per aglomeració els diversos grups finals.
+
+
+### Mesures de similitud
+
+
+Amb la finalitat de decidir quins objectes han de ser agrupats i quins clústers
+dividits, hem de fer ús de les mesures de similitud entre els elements.
+
+Tal com s´ha estudiat en l'apartat 3 dels apunts de l´assignatura existeixen
+diferents mètodes per a calcular la di(similitud), com per exemple les distancies
+Euclidià i _Hamming_.
+
+Podem calcular les distancies entre cada par d´elements amb l´ajuda de la funció `dist():
+
+```{r}
+# Calcula la matriu de disimilitud
+matrixDist <- dist(df, method = "euclidean")
+```
+
+El resultat de la línia de codi anterior és la matriu de distàncies o dissimilituds. Per defecte, la funció `dist()` calcula la distància Euclidià, no obstant podem
+indicar altres mètriques passant-les a l'argument `method`.
+
+### Càlcul de l´arbre jeràrquic
+
+Així doncs, donada una matriu de distàncies calculada amb la funció `dist()`, podem
+crear un arbre jeràrquic amb l´ajuda de la funció `hclust()`:
+
+```{r}
+hcFit <- hclust(d = matrixDist, method = "ward.D2")
+```
+
+Cal fer una especial referència, als diferents tipus de mètodes aglomeratius. Tot seguit, es mostren els més habituals:
+
+>* Maximum o _complete linkage_: La distància entre dos clústers es defineix com
+el màxim valor de totes les distàncies de cada par d´elements entre els elements
+del clúster 1 i els elements del clúster 2. Aquest mètode tendeix a produir particions compactes.
+>
+* Minium o _single linkage_: La distància entre dos clústers es defineix com
+el mínim valor de totes les distàncies de cada par d´elements entre els elements
+del clúster 1 i els elements del clúster 2. Aquest mètode tendeix a produir particions molt grans.
+>
+* Mean o _average linkage_:  La distància entre dos clústers es defineix com la 
+distància mitjana entre els elements de la partició 1 i els elements de la partició 2.
+>
+* *Centroid linkage*: La distància entre dos clústers es defineix com la distància entre el centroide de la particio 1 i el centroide de la partició 2.
+>
+* *Ward´s minium variance method*: Aquest mètode minimitza la variància intra-clústers. 
+
+Convé destacar que, es recomanable utilitzar el mètode _Ward´s_ o _complete linkage_.
+
+### Tallar el dendograma en diferents grups
+
+Un dels problemes amb el clustering jeràrquic és que com no proporcionem el nombre
+de clústers _a priori_, no sabem on tallar l´arbre per a formar clústers.
+
+Podem fer ús de la funció `cutree()` per a tallar un arbre passant el nombre de
+particions o l´altura de l´arbre:
+
+```{r}
+# Talla l´argre en 4 groups
+grp <- cutree(hcFit, k = 4)
+head(grp, n = 4)
+```
+ Podem conèixer el nombre d´elements en cada partició com es mostra a continuació:
+ 
+```{r}
+# Nombre de elements en cada partició
+table(grp)
+```
+ 
+A continuació, es mostra la representació gràfica de l´arbre jeràrquic. Aquest
+gràfic es coneix com a dendrograma:
+
+```{r dpi=300, fig.width=7, fig.height=7}
+# Talla en 4 groups i acoloreix per grups
+fviz_dend(hcFit, k = 4,
+  main = "Dendograma de clústers",
+  horiz = TRUE,
+  cex = 0.4, 
+  k_colors = "jco",
+  color_labels_by_k = TRUE, 
+  rect = TRUE,
+  rect_border = "jco",
+  rect_fill = TRUE) +
+  theme(legend.position = "bottom",
+      plot.title = element_text(color="#4F81BD", size=16, face="bold"))
+```
+
+També, podem obtindre un dendrograma circular mitjançant la opció `type = "circular"`:
+
+```{r dpi=300, fig.width=7, fig.height=7}
+fviz_dend(hcFit, cex = 0.5, k = 4,
+          k_colors = "jco", type = "circular")
+```
+
+
+
+Amb l´ajuda de la funció `fviz_cluster()`, podem visualitzar el resultat en un
+diagrama de dispersió. Els elements són representats mitjançant punts, a més 
+s´utilitza PCA:
+
+```{r dpi=300, fig.width=7, fig.height=7}
+# Diagrama de clústers
+fviz_cluster(list(data = df, cluster = grp),
+  main = "Gràfic de clústers",
+  palette = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+  ellipse.type = "convex", 
+  repel = TRUE, 
+  show.clust.cent = FALSE, ggtheme = theme_minimal()) +
+ theme(legend.position = "bottom",
+    plot.title = element_text(color="#4F81BD", size=16, face="bold"))
+```
+
+## Comparació dels mètodes d´agrupació
+
+Recollint tot el que s´ha dit, farem ús de la funció `clValid()` del paquet 
+`clValid` per a comparar els diferents mètodes d´agrupació.
+
+El prototip de la funció és el següent:
+
+```{r eval=FALSE}
+clValid(obj, nClust, clMethods = "hierarchical",
+validation = "stability", maxitems = 600,
+metric = "euclidean", method = "average")
+```
+
+on els arguments són:
+
+* **obj**: Una matriu o data frame numèric. Les files son els elements que 
+s´han d´agrupar i les columnes són les observacions.
+* **nClust**: Un vector numèric especificant el nombre de particions que s´han
+d´avaluar.
+* **validation**: El tipus de mètrica de validació. Possibles valors són “internal”, “stability”, and “biological. També, permet escollir varies mètriques a la vegada.
+* **maxitems**: El nombre màxim d´elements (files en la matriu) que han de ser
+agrupades.
+* **metric**: La mètrica utilitzada per a determinar la matriu de distàncies. Possibles valors són “euclidean”, “correlation”, i “manhattan”.
+* **method**: Per a agrupacions jeràrquiques, el mètode d´aglomeració a utilitzar.
+Les opcions disponibles són “ward”, “single”, “complete” i
+“average”.
+
+Per exemple, considerant el conjunt de dades `USArrests` que hem estat utilitzant per a il·lustrar els diferents mètodes d´aglomeració, podem utilitzar la funció `clValid()` com es mostra tot seguit per a calcular les diferents mètriques internes:
+
+```{r}
+# comparació dels mètodes d´agrupació
+clmethods <- c("hierarchical", "kmeans", "pam")
+intern <- clValid(df, nClust = 2:6,
+          clMethods = clmethods, validation = "internal")
+# Resúm
+summary(intern)
+```
+
+> Com es pot observar el métode jerárquic amb dos clústers obté valors òptims en
+les métriques _Connectivity_ i _Silhouette_ . Per altra banda, el mètode k-means
+obté una bona puntuació en la mètrica _Dunn_ amb un valor òptim de _k_ = 6.
+
+
 
 
 # Bibliografia
