@@ -150,34 +150,46 @@ on els arguments són els següents:
 A continuació, es mostra com determinar el nombre òptim de particions per al mètode
 **_k-means_**:
 
-```{r}
+```{r dpi=300}
 # Mètode elbow
 fviz_nbclust(df, kmeans, method = "wss") +
   geom_vline(xintercept = 4, linetype = 2) +
-  labs(x = "Nombre de particions k", y = "Total intra-clúster suma de quadrats",
+  labs(x = "Nombre de particions k", 
+       y = "Total intra-clúster suma de quadrats",
        title = "Nombre òptim de particions",
        subtitle = "Mètode Elbow") +
-  theme_gray()
+  theme_classic() +
+  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
+         plot.subtitle = element_text(color="#4F81BD", size=14))
+  
        
   
 
 # Mètode Silhouette
-fviz_nbclust(df, kmeans, method = "silhouette")+
-  labs(x = "Nombre de particions k", y = "Ample de la mitjana de la silueta",
+fviz_nbclust(df, kmeans, method = "silhouette") +
+  labs(x = "Nombre de particions k", 
+       y = "Ample de la mitjana de la silueta",
        title = "Nombre òptim de particions", 
        subtitle = "Mètode Silhouette") +
-  theme_gray()
+  theme_classic() +
+  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
+        plot.subtitle = element_text(color="#4F81BD", size=14))
   
 
 
 
 # Mètode Gap
 set.seed(123)
-fviz_nbclust(df, kmeans, nstart = 25, method = "gap_stat", nboot = 500)+
-  labs(x = "Nombre de particions k", y = "Valor de Gap (k)",
+fviz_nbclust(df, kmeans, nstart = 25, 
+             method = "gap_stat", nboot = 500) +
+  labs(x = "Nombre de particions k", 
+       y = "Valor de Gap (k)",
        title = "Nombre òptim de particions",
        subtitle = "Mètode Gap") +
-  theme_gray()
+  theme_classic() +
+  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
+        plot.subtitle = element_text(color="#4F81BD", size=14))
+  
   
 ```
 
@@ -228,15 +240,18 @@ Una possible solució és reduir la dimensionalitat fent ús d´un algoritme de 
 
 En aquest sentit, farem ús de la funció `fviz_cluster()` que ens permetrà visualitzar els clústers i que utilitza PCA quan el nombre de variables és més gran de 2. Passarem com a arguments el resultat del model i el conjunt de dades original:
 
-```{r}
+```{r dpi=300, fig.width=7, fig.height=7}
 # Visualitzem els clústers
 fviz_cluster(kmeansFit, data = df,
-  palette = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
-  ellipse.type = "euclid", # Agrupacions en elipses
-  star.plot = TRUE, # Afegeix rectes des de els centroides a les observacions
-  repel = TRUE, 
-  ggtheme = theme_gray()
-)
+    main = "Gràfic de clústers",
+    palette = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+    ellipse.type = "euclid", 
+    star.plot = TRUE,
+    repel = TRUE,
+    ggtheme = theme_minimal()) + 
+  theme(legend.position = "bottom",
+        plot.title = element_text(color="#4F81BD", size=16, face="bold"))
+
 ```
 
 Podem observar en el gràfic que les observacions són representades mitjançant punts i que en el nostre cas s´ha usat PCA. A més, s´han dibuixat el.lipses per tal  de
@@ -278,13 +293,16 @@ on els arguments són els següents:
 
 Per a estimar el nombre òptim de clùsters utilitzarem la mètrica de Silhoutte. La idea central és calcular l´algoritme PAM amb diferents valors de k. Per a la realització d´aquesta tasca farem ús de la funció `fviz_nbclust()`:
 
-```{r}
+```{r dpi=300}
 # Obtenció de k utilitzant la mètrica Silhoutte
-fviz_nbclust(df, pam, method = "silhouette")+
-  labs(x = "Nombre de particions k", y = "Ample de la mitjana de la silueta",
+fviz_nbclust(df, pam, method = "silhouette") +
+  labs(x = "Nombre de particions k", 
+       y = "Ample de la mitjana de la silueta",
        title = "Nombre òptim de particions", 
        subtitle = "Mètode Silhouette") +
-  theme_gray()
+  theme_classic() +
+  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
+        plot.subtitle = element_text(color="#4F81BD", size=14))
   
 ```
 
@@ -310,14 +328,16 @@ cada observació ha sigut agrupada.
 Igual com hem fet en l´exercici anterior utilitzarem la funció `fviz_cluster()` del
 paquet `factoextra` per a visualitzar les particions:
 
-```{r}
+```{r dpi=300, fig.width=7, fig.height=7}
 # Visualitzem els clústers
 fviz_cluster(pamFit,
-  palette = c("#00AFBB", "#FC4E07"), 
-  ellipse.type = "t", 
-  repel = TRUE, 
-  ggtheme = theme_gray()
-)
+    main = "Gràfic de clústers",
+    palette = c("#00AFBB", "#FC4E07"), 
+    ellipse.type = "t", 
+    repel = TRUE,
+    ggtheme = theme_minimal()) + 
+  theme(legend.position = "bottom",
+      plot.title = element_text(color="#4F81BD", size=16, face="bold"))
 ```
 
 
