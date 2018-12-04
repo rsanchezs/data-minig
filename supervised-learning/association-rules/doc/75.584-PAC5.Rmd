@@ -143,7 +143,7 @@ Donat això, ens preguntem si aquestes regles ens dona alguna informació útil.
 Podem forçar apriori er a que ens doni algo més significatiu, com aquelles regles que impliquin que el income sigui més petit que 50K i la rasa sigui blanca
 
 ```{r message= FALSE, warning=FALSE}
-rules <- apriori(mba, parameter=list(supp=0.01, conf=0.85), appearance=list(default="lhs",rhs=c("income=<=50K", "race=White")), control=list(verbose=F))
+rules <- apriori(mba, parameter=list(supp=0.01, conf=0.95), appearance=list(default="lhs",rhs=c("income=<=50K", "race=White")), control=list(verbose=F))
 
 summary(rules)
 ```

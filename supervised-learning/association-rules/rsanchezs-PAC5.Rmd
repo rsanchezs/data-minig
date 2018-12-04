@@ -1,0 +1,619 @@
+---
+output:
+  word_document:
+    highlight: zenburn
+    eference_docx: word-styles-reference-36docx
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Format d´entrega 
+
+Aquest document s´ha realitzat mitjançant __Markdown__[^1] amb l´ajuda de l´entorn de desenvolupament __RStudio__[^2] utilitzant les característiques que aquest ofereix per
+a la creació de documents __R__ reproduïbles.
+
+La documentació generada en la realització de la pràctica  es troba allotjada en __GitHub__ al següent repositori:
+
+* https://github.com/rsanchezs/data-minig
+
+En aquest repositori es poden trobar els següents fitxers:
+
+* Aquest document en formats __pdf__ i __docx__ amb el nom rsanchezs_PAC2.
+* Un document __R Markdown__[^3] que es pot utilitzar per a reproduir tots els exemples
+presentats a la PAC.
+* El conjunt de dades utilitzades.
+
+
+
+![](img/propietat-intelectual.PNG)
+
+
+
+[^1]: https://es.wikipedia.org/wiki/Markdown
+[^2]: https://www.rstudio.com/
+[^3]: https://rmarkdown.rstudio.com/
+
+
+
+
+
+# Exercici 1:  
+Creieu que les regles d'associació són el mètode més adequat per aconseguir els objectius que us havíeu proposat? Justifiqueu la resposta tot raonant-la.
+Com podria ser el model resultant?
+Doneu un exemple de la interpretació que es podria derivar del model generat
+
+
+
+# Exercici 2:  
+
+## Pre-processament de les dades
+
+En primer lloc, importarem el conjunt de dades amb `read_csv(path_to_file)`:
+
+```{r message=FALSE}
+# Carreguem la llibreria que ens permet importar arxius CSV
+if (!require("readr")) {
+  # Instal.lació de la llibreria
+install.packages("readr")
+# Carreguem la llibreria 
+library(readr)
+}
+# Importa el conjunt de dades a un dataframe
+lastfm <- read_csv("data/lastfm.csv")
+```
+
+
+La funció `complete.cases(data)` retorna un vector de tipus lògic indicant-nos quines files no tenen valors desconeguts. Així, amb l´ajuda d´aquest vector filtrem les files del dataframe que no contenen valors desconeguts:
+
+```{r}
+# Filtrem les observacions sense valors desconeguts
+lastfm <- lastfm[complete.cases(lastfm), ]
+dim(lastfm)
+```
+
+D´altra banda, amb el següent fragment de codi convertim a tipus categòric les variables `Sex` i `Country`:
+
+```{r message=FALSE}
+# Carreguem ecosistema tidyverse
+if (!require("tidyverse")) {
+  # Instal.lació de la llibreria
+install.packages("tidyverse")
+# Carreguem la llibreria 
+library(tidyverse)
+}
+lastfm <- lastfm %>% 
+          mutate(Sex = as.factor(lastfm$sex)) %>% 
+          mutate(Country = as.factor(lastfm$country))
+
+```
+
+Abans d´aplicar les regles d´associació ens caldrà convertir el conjunt de dades en transaccions amb la finalitat que tots els articles que es compren junts estiguin en una mateixa fila.
+
+Per tant, ens caldrà agrupar les dades per `user`. Les següents línies de codi combinen tots els registres d´un usuari en una unica fila:
+
+```{r message=FALSE}
+library(plyr)
+transactionData <- ddply(lastfm,c("user","sex", "country"),
+                       function(df1)paste(df1$artist,
+                       collapse = ","))
+
+```
+
+
+Com que les columnes `user`, `sex` i `country` no les usarem en les regles d´associó les el.liminem de `transactionData`:
+
+```{r}
+# El.liminem la columna
+transactionData$user <- NULL
+# El.liminem la columna
+transactionData$sex <- NULL
+# El.liminem la columna
+transactionData$country <- NULL
+# Cambiem el nom de la varialble a items
+colnames(transactionData) <- c("items")
+```
+
+
+Aquest format per a dades transaccionals és conegut com a format basket[^6] . A continuació, emmagatzemem aquestes dades en un arxiu CSV (Comma Separated Values):
+
+```{r}
+write.csv(transactionData,file = "data/lastfm_transactions.csv", 
+          quote = FALSE, row.names = TRUE)
+
+```
+
+[^6]: Un arxiu està en format _basket_ quan cada fila representa una transacció i cada columna representa un article.
+
+El següent fragment de codi llegeix l´arxiu `lastfm_transation.csv` i l´emmagatzema en un objecte de la classe `transaction`:
+
+```{r message=FALSE, warning=FALSE}
+if (!require("arules")) {
+  # Instal.lació de la llibreria
+install.packages("arules")
+# Carreguem la llibreria 
+library(arules)
+}
+tr <- read.transactions("data/lastfm_transactions.csv",
+                        format = "basket",
+                        sep = ",")
+
+```
+
+Visualitzem un resum de l´objecte `tr`:
+
+```{r}
+# Visualitzem un resum de les transaccions
+summary(tr)
+```
+
+> Podem observar en la sortida la següent informació sobre les transaccions:
+>
+> + S´han generat **15001 transaccions (files)** i **16003 articles (columnes)**.
+> + Els articles més freqüents. Com per exemple, radiohead amb 2704 registres, beatles amb 2688, etc.
+
+
+La representació gràfica, seria:
+
+```{r dpi=300, fig.width=7, fig.height=7, message=FALSE}
+# Creació d´un gràfic de barres amb les freqüències absolutes
+# per als top 20
+if (!require("RColorBrewer")) {
+  # Instal.lació de la llibreria
+install.packages("RColorBrewer")
+# Carreguem la llibreria 
+library(RColorBrewer)
+}
+itemFrequencyPlot(tr,topN=20,type="absolute",
+                  col=brewer.pal(8,'Pastel2'))
+
+```
+
+## Generació de les regles
+
+En aquest apartat utilitzarem el algoritme apriori per a generar les regles d´associació.
+Per a trobar un conjunt de regles farem ús de la funció `apriori()` del paquet `arules`.
+
+El prototip de la funció és el següent:
+
+```{r eval=FALSE}
+apriori(data, parameter = list(list(supp=0.001, conf=0.8, maxlen=10))
+```
+
+
+on els arguments són els següents:
+
+* **data:** un objecte de tipus `transaction`.
+* **parameter:** una llista especificant les mètriques i el màxim nombre d´elements:
+  + **supp**: el llindar de suport. Per defecte,  __supp=0.001.__
+  + **conf**: el llindar de confiança. Per defecte,  __conf=0.8.__
+  + **maxlen**: el màxim nombre d´elements. Per defecte, __maxlen=10.__
+
+Com a mostra, la següent línia de codi calcula el conjunt de regles amb els valors per defecte:
+
+```{r message=FALSE}
+# Executa algoritme a priori amb valors per defecte
+rules <- apriori(tr, parameter = list(supp=0.001, conf=0.8, maxlen=10))
+```
+
+Tot seguit es mostra un resúm del conjunt de regles:
+
+```{r}
+# Visualitzem un resum
+summary(rules)
+```
+
+> Podem observar en la sortida la següent informació sobre els conjunt de regles:
+>
+  + **Paramenter Specification:** on min_sup=0.001 i min_confidence=0.8 amb 10 articles com a màxim en una regla.
+  + **Total number of rules:** en aquest cas 8952 regles.
+  + **Distribution of rule lenght:** Una longitud de 4 articles té la majoria de   regles i la longitud 7 té el nombre més baix de regles.
+  + **Summary of Quality measures:** valors màxims i mìnims per a les mètriques    de soport, confiança i millora.
+  + **Mining info:** les dades, soport, confiança i nombre de transaccions. 
+
+## Establiment dels llindars de suport i confiança
+
+Després de provar diversos valors per a les mètriques, trobem un conjunt de regles amb un nivell de suport mínim  del 3% i una confiança mínima del 80%:
+
+
+```{r eval=FALSE}
+# Executem el algoritme a priori amb
+# min_supp = 3% i min_conf = 80%
+rules <- apriori(tr, parameter = list(supp = 0.003, conf = 0.80))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+rules <- apriori(tr, parameter = list(supp = 0.003, conf = 0.80))
+```
+
+Tot seguit es mostra un resum d´executar __l´algoritme apriori__:
+
+```{r}
+# Visualizem un resum
+summary(rules)
+```
+
+Com que hi ha només 18 regles les visualitzem per pantalla:
+
+```{r}
+# Visualitzem les 10 primeres regles d´associació
+inspect(rules)
+```
+
+> Per exemple, podem observar en la sortida les següents regles:
+>
+* 83% dels usuaris  que escolten James Blunt i Keane també escolten Cold Play.
+* 82% dels clients que escolten Keane, Oasis i The Killers també escolten Cold Play.
+
+
+## Cerca de regles segons conseqüent
+
+A tall d´exemple, supossem que necessitarem trobar les regles d´associació per a un determinat artista. Podem
+fer ús del paràmetre `appareance` de la funció `apriori()`, establint un o diversos  antecedents i un conseqüent amb __LHS (IF part)__ i __RHS (THEN part)__:
+
+Per exemple, per a respondre a la pregunta _"Quins artistes van escoltar els usuaris abans de escoltar Radiohead"_  ho fariem com es mostra a continuació:
+
+```{r}
+rules <- apriori(tr, parameter = list(supp=0.003, conf=0.8),
+                     appearance = list(default="lhs",rhs="radiohead"))
+
+```
+
+
+```{r}
+inspect(head(rules))
+```
+
+## Visualització de les regles
+
+Podem visualitzar les regles d´associació amb `plot()` del paquet
+`arulesViz`. Utilitza la métrica de soport en l´eix d´ordenada i la confiança en 
+l´eix d´abscisses. A més, la métrica de millora (lift) es usada per colorejar
+els punts.
+
+Per exemple, podem visualitzar el conjunt de regles amb un llindar de confiança del 80% com es mostra en el següent fragment de codi:
+
+```{r message=FALSE}
+if (!require("arulesViz")) {
+  # Instal.lació de la llibreria
+install.packages("arulesViz")
+# Carreguem la llibreria 
+library(arulesViz)
+}
+```
+
+```{r dpi=300,  fig.width=7, fig.height=7}
+# Filtra les regles amb min_conf > 0.95
+subRules <- rules[quality(rules)$confidence>0.80]
+# Diagrama de dispersió amb regles associació amb min_conf>0.80
+plot(subRules, jitter=0)
+```
+
+
+
+# Exercici 3:  
+
+
+## Pre-processament de les dades
+
+En aquest exercici, farem ús del conjunt de dades `Online-Retail` [^3] del repositori UCI Machine Learning Repository [^4].
+
+En primer lloc, importarem el conjunt de dades amb `read_excel(path_to_file)`:
+
+```{r message=FALSE}
+# Carreguem la llibreria que ens permet importar arxius excel
+if (!require("readxl")) {
+  # Instal.lació de la llibreria
+install.packages("readxl")
+# Carreguem la llibreria 
+library(readxl)
+}
+# Importa el conjunt de dades a un dataframe
+retail <- read_excel(path = "data/Online Retail.xlsx")
+str(retail)
+```
+
+[^3]: http://archive.ics.uci.edu/ml/datasets/online+retail
+[^4]: http://archive.ics.uci.edu/ml/index.php
+
+La funció `complete.cases(data)` retorna un vector de tipus lògic indicant-nos quines files no tenen valors desconeguts. Així, amb l´ajuda d´aquest vector filtrem les files del dataframe:
+
+```{r}
+# Filtrem les observacions sense valors desconeguts
+retail <- retail[complete.cases(retail), ]
+dim(retail)
+```
+
+
+D´altra banda, amb la següent línia de codi convertim a tipus categòric les variables `Description` i `Country`:
+
+
+
+```{r message=FALSE, warning=FALSE}
+# Carreguem ecosistema tidyverse
+if (!require("tidyverse")) {
+  # Instal.lació de la llibreria
+install.packages("tidyverse")
+# Carreguem la llibreria 
+library(tidyverse)
+}
+retail <- retail %>% 
+          mutate(Description = as.factor(retail$Description)) %>% 
+          mutate(Country = as.factor(retail$Country))
+```
+
+A continuació, separem la data i l´hora de la variable `InvoiceDate` i les emmagatzemem a les variables `dataInvoice` i `timeInvoice` respectivament:
+
+```{r}
+# Emmagatzema la data en la variable `dataInvoice`
+dateInvoice <- as.Date(retail$InvoiceDate)
+# Emmagatzema la hora en la variable `timeInvoice`
+timeInvoice <- format(retail$InvoiceDate, "%H:%M:%S")
+# Afegim les noves variables al dataframe
+retail <- cbind(retail, dateInvoice)
+retail <- cbind(retail, timeInvoice)
+```
+
+Per últim, convertim la variable `InvoiceNo` de tipus `character` a `numeric`:
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+# Convertim de character a numeric variable InvoiceNo
+InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))
+# Afegim la variable al dataframe
+retail <- cbind(retail, InvoiceNo)
+```
+
+
+```{r eval=FALSE}
+# Convertim de character a numeric variable InvoiceNo
+InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))
+# Afegim la variable al dataframe
+retail <- cbind(retail, InvoiceNo)
+```
+
+Abans d´aplicar les regles d´associació ens caldrà convertir el conjunt de dades en transaccions amb la finalitat que tots els articles que es compren junts estiguin en una mateixa fila.
+
+Per tant, ens caldrà agrupar les dades o bé per `CustomerID` o bé per `CustomerID` i `Date`; o també podem agrupar els articles per `InvoiceNo` i `Date`.
+
+Les següents línies de codi combinen tots els articles de una `InvoiceNo` i `date` en una fila i seperen els elements amb una coma:
+
+```{r message=FALSE}
+# Agrupem articles per `InvoiceNo` i `dateInvoice`
+library(plyr)
+transactionData <- ddply(retail,c("InvoiceNo","dateInvoice"),
+                       function(df1)paste(df1$Description,
+                       collapse = ","))
+```
+
+Com que les columnes `InvoiceNo` i `dateInvoice` no les usarem en les regles d´associó les el.liminem de `transactionData`:
+
+```{r}
+# El.liminem la columna
+transactionData$InvoiceNo <- NULL
+# El.liminem la columna
+transactionData$dateInvoice <- NULL
+# Cambiem el nom de la varialble a items
+colnames(transactionData) <- c("items")
+```
+
+
+Aquest format per a dades transaccionals és conegut com a format __basket__[^7]. A continuació, emmagatzemem aquestes dades en un arxiu CSV (Comma Separated Values):
+
+
+
+
+```{r}
+# Emmagatzemem transaccions en un arxiu CSV
+write.csv(transactionData,file = "data/market_basket_transactions.csv", 
+          quote = FALSE, row.names = TRUE)
+```
+
+
+[^6]: Un arxiu està en format _basket_ quan cada fila representa una transacció i cada columna representa un article.
+
+El següent fragment de codi llegeix l´arxiu `market_basket_transation.csv` i l´emmagatzema en un objecte de la classe `transaction`:
+
+```{r message=FALSE, eval=FALSE}
+if (!require("arules")) {
+  # Instal.lació de la llibreria
+install.packages("arules")
+# Carreguem la llibreria 
+library(arules)
+}
+# Llegeix arxiu CSV i emmagatzema contingut en un objecte de la  
+# classe `transaction`
+tr <- read.transactions("data/market_basket_transactions.csv",
+                        format = "basket",
+                        sep = ",")
+```
+
+```{r message=FALSE, echo=FALSE, warning=FALSE}
+
+if (!require("arules")) {
+  # Instal.lació de la llibreria
+install.packages("arules")
+# Carreguem la llibreria 
+library(arules)
+}
+tr <- read.transactions("data/market_basket_transactions.csv",
+                        format = "basket",
+                        sep = ",")
+```
+
+Visualitzem un resum de l´objecte `tr`:
+
+```{r}
+# Visualitzem un resum 
+summary(tr)
+```
+
+
+> Podem observar en la sortida la següent informació sobre les transaccions:
+>
+> + S´han generat **22191 transaccions (files)** i **30066 articles (columnes)**.
+> + Els articles més freqüents. Com per exemple 'WHITE HANGING HEART T-LIGHT HOLDER' amb 1803 articles, REGENCY CAKESTAND 3 TIER amb 1709, etc. 
+
+
+La representació gràfica, seria:
+
+```{r dpi=300, fig.width=7, fig.height=7, message=FALSE}
+# Creació d´un gràfic de freqüencia dels articles top 20
+if (!require("RColorBrewer")) {
+  # Instal.lació de la llibreria
+install.packages("RColorBrewer")
+# Carreguem la llibreria 
+library(RColorBrewer)
+}
+itemFrequencyPlot(tr,topN=20,type="absolute",
+                  col=brewer.pal(8,'Pastel2')) 
+```
+
+
+
+
+## Generació de les regles
+
+En aquest apartat utilitzarem el algoritme apriori per a generar les regles d´associació.
+Per a trobar un conjunt de regles farem ús de la funció `apriori()` del paquet `arules`.
+
+El prototip de la funció és el següent:
+
+```{r eval=FALSE}
+apriori(data, parameter = list(list(supp=0.001, conf=0.8, maxlen=10))
+```
+
+
+on els arguments són els següents:
+
+* **data:** un objecte de tipus `transaction`.
+* **parameter:** una llista especificant les mètriques i el màxim nombre d´elements:
+  + **supp**: el llindar de suport. Per defecte,  __supp=0.001.__
+  + **conf**: el llindar de confiança. Per defecte,  __conf=0.8.__
+  + **maxlen**: el màxim nombre d´elements. Per defecte, __maxlen=10.__
+
+Com a mostra, la següent línia de codi calcula el conjunt de regles amb els valors per defecte:
+
+```{r eval=FALSE, message=FALSE}
+# Executa algoritme a priori amb valors per defecte
+rules <- apriori(tr, parameter = list(supp=0.001, conf=0.8, maxlen=10))
+```
+
+Tot seguit es mostra un resúm del conjunt de regles:
+
+```{r}
+# Visualitzem un resum
+summary(rules)
+```
+
+> Podem observar en la sortida la següent informació sobre els conjunt de regles:
+>
+  + **Paramenter Specification:** on min_sup=0.001 i min_confidence=0.8 amb 10 articles com a màxim en una regla.
+  + **Total number of rules:** en aquest cas 49122 regles.
+  + **Distribution of rule lenght:** Una longitud de 5 articles té la majoria de   regles i la longitud 2 té el nombre més baix de regles.
+  + **Summary of Quality measures:** valors màxims i mìnims per a les mètriques    de soport, confiança i millora.
+  + **Mining info:** les dades, soport, confiança i nombre de transaccions. 
+
+
+## Establiment dels llindars de suport i confiança
+
+Seleccionem un nivell de suport del 5% i una confiança del 95%. Amb lo primer conseguim que cadascuna de les regles estigui present al menys el 5% de les mostres, lo que els hi otorga representativitat, mentres que amb lo segon obtenim la probabilitat de que les regles siguin certes a les mostres en les que els seus antecedents són certs també.
+
+```{r eval=FALSE}
+# Executem el algoritme a priori amb
+# min_supp = 5% i min_conf = 95%
+rules <- apriori(tr, parameter = list(supp = 0.005, conf = 0.95))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+rules <- apriori(tr, parameter = list(supp = 0.005, conf = 0.95))
+```
+
+Tot seguit es mostra un resum d´executar __l´algoritme apriori__:
+
+```{r}
+# Visualizem un resum
+summary(rules)
+```
+
+Com que hi ha 80, mostrem per pantalla les 10 primeres regles:
+
+```{r}
+# Visualitzem les 10 primeres regles d´associació
+inspect(rules[1:10])
+```
+
+> Per exemple, podem observar en la sortida les següents regles:
+>
+* 100% dels clients que compren 'FRONT DOOR` també compren 'KEY FOB'
+* 96% dels clients que compren 'HERB MARKER BASIL' i 'HERB MARKER CHIVES' també compren 'HERB MARKER THYM'.
+
+
+## Cerca de regles segons antecedent
+
+Per posar un exemple, supossem que necessitem trobar les regles d´associació per a un determinat article. Podem
+fer ús del paràmetre `appareance` de la funció `apriori()`. En aquest sentit, podem establir un o diversos  antecedents i un conseqüent amb __LHS (IF part)__ i __RHS (THEN part)__:
+
+Per exemple, per a respondre a la pregunta _"Els clients que compren METAL també compren ..."_  ho farem com es mostra a continuació:
+
+
+```{r}
+# Cerca regles segons antecedent `METAL`
+metal_rules <- apriori(tr,  parameter = list(supp=0.001, conf=0.8),
+                        appearance = list(lhs="METAL",default="rhs"))
+
+```
+
+```{r}
+inspect(head(metal_rules))
+```
+
+## Visualització de les regles
+
+Podem visualitzar les regles d´associació amb `plot()` del paquet
+`arulesViz`. Utilitza la métrica de soport en l´eix d´ordenada i la confiança en 
+l´eix d´abscisses. A més, la métrica de millora (lift) es usada per colorejar
+els punts.
+
+Per exemple, podem visualitzar el conjunt de regles amb un llindar de confiança del 95% com es mostra en el següent fragment de codi:
+
+```{r}
+if (!require("arulesViz")) {
+  # Instal.lació de la llibreria
+install.packages("arulesViz")
+# Carreguem la llibreria 
+library(arulesViz)
+}
+```
+
+```{r dpi=300,  fig.width=7, fig.height=7}
+# Filtra les regles amb min_conf > 0.95
+subRules <- rules[quality(rules)$confidence>0.95]
+# Diagrama de dispersió amb regles associació amb min_conf>0.95
+plot(subRules, jitter=0)
+```
+
+
+
+# Bibliografia
+
+
+
+[1] Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
+
+[2] Jordi Gironés Roig, Jordi Casas Roma, Julià Minguillón Alfonso, Ramon Caihuelas Quiles : Minería de Datos: Modelos y Algoritmos. Barcelona, Editorial UOC, 2017, ISBN: 978-84-9116-904-8.
+
+[3] Jiawe Han, Michellie Chamber & Jian Pei: Data mining : concepts and techniques. 3º Edition. USA, Editorial Elsevier, 2012, ISBN 978-0-12-381479-1
+
+[4] A Gentle Introduction on Market Basket Analysis - Association Rules. [Fecha de consulta: 29 noviembre 2018]. Disponible en : https://datascienceplus.com/a-gentle-introduction-on-market-basket-analysis%E2%80%8A-%E2%80%8Aassociation-rules/
+
+[4] Market Basket Analysis using R.  [Fecha de consulta: 30 noviembre 2018]. Disponible en : https://www.datacamp.com/community/tutorials/market-basket-analysis-r
+
+
+
+
+
+
+
