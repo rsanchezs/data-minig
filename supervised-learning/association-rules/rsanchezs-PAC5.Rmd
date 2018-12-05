@@ -2,7 +2,7 @@
 output:
   word_document:
     highlight: zenburn
-    eference_docx: word-styles-reference-36docx
+    reference_docx: word-styles-reference-36.docx
   pdf_document: default
 ---
 
@@ -42,9 +42,31 @@ presentats a la PAC.
 
 
 # Exercici 1:  
-Creieu que les regles d'associació són el mètode més adequat per aconseguir els objectius que us havíeu proposat? Justifiqueu la resposta tot raonant-la.
-Com podria ser el model resultant?
-Doneu un exemple de la interpretació que es podria derivar del model generat
+
+
+En relació amb el cas pràctic que vaig desenvolupar a la PAC1 es tractava d´implementar un _recommender system_ (de l´anglès, sistemes de recomanació).
+És per això que, utilitzar els mètodes no supervisats no seria un bona elecció.
+
+En la actualitat existeixen cinc tipus de _recomenders_ i que mostrem a continuació ordenats dels més simples als més complexes:
+
+* Articles més populars.
+* Models d´associació i _Market Basket Analysis_.
+* Filtrat del contingut.
+* Filtrat col.laboratiu
+* Models híbrids.
+
+
+En el nostre cas en particular, l´anàlisi d´associacions i __Market Basket Analysis__ seria una opció a considerar a l´hora d´implementar el motor de recomanació.
+
+Els models d´associació i Market Basket Analysis es basen en l´anàlisi de la cerca dels articles que es compren generalment de forma conjunta.
+
+Quan un client compra només un article o servei a la vegada podem anomenar aquest fet com una associació. Per altra banda, si compra més de un producte ens trobem amb un Market Basket.
+
+Així doncs, l´anàlisi d´associacions es du a terme a nivell de client (que hi ha en el seu compte) mentre que el Market Basket Analysis es porta a terme a nivell de transacció (que hi ha en el seu compte).
+
+
+L'Associació i l'Anàlisi de la Cistella de Mercat són el nucli de les recomanacions de comerç electrònic sota l'encapçalat "el client que va comprar això també va considerar aquests" o "articles comprats junts", que son un element bàsic en Amazon. 
+
 
 
 
@@ -104,14 +126,14 @@ transactionData <- ddply(lastfm,c("user","sex", "country"),
 ```
 
 
-Com que les columnes `user`, `sex` i `country` no les usarem en les regles d´associó les el.liminem de `transactionData`:
+Com que les columnes `user`, `sex` i `country` no les usarem en les regles d´associació les eliminem de `transactionData`:
 
 ```{r}
-# El.liminem la columna
+# Eliminem la columna
 transactionData$user <- NULL
 # El.liminem la columna
 transactionData$sex <- NULL
-# El.liminem la columna
+# Eliminem la columna
 transactionData$country <- NULL
 # Cambiem el nom de la varialble a items
 colnames(transactionData) <- c("items")
@@ -172,6 +194,46 @@ itemFrequencyPlot(tr,topN=20,type="absolute",
 
 ```
 
+
+Un tipus de gràfic que podem utilitzar per a visualitzar la freqüència dels artistes és el gràfic de tipus _tag cloud_:
+
+
+```{r message=FALSE, dpi=300, fig.width=12, fig.height=10, warning=FALSE}
+
+
+# install.packages("tm")  # mineria de textos
+# install.packages("SnowballC") # 
+# install.packages("wordcloud") # generador world-cloud 
+# install.packages("RColorBrewer") # paleta de colors
+
+# Carreguem les llibreries
+library(tm)
+library(SnowballC)
+library(RColorBrewer)
+library(wordcloud)
+
+# LLegeix dades
+lastfmDS<-read.csv("data/lastfm.csv")
+lastfmDS<-data.frame(lastfmDS)
+
+# Calcula Corpus
+lastfmDSCorpus<-Corpus(VectorSource(lastfmDS$artist))
+
+# Neteja les dades
+lastfmDSClean<-tm_map(lastfmDSCorpus, PlainTextDocument)
+lastfmDSClean<-tm_map(lastfmDSCorpus,tolower)
+lastfmDSClean<-tm_map(lastfmDSClean,removeNumbers)
+lastfmDSClean<-tm_map(lastfmDSClean,removePunctuation)
+lastfmDSClean<-tm_map(lastfmDSClean,removeWords,stopwords("english"))
+lastfmDSClean<-tm_map(lastfmDSClean,stripWhitespace)
+lastfmDSClean<-tm_map(lastfmDSClean,stemDocument)
+
+# Crea el tag cloud
+wordcloud(words = lastfmDSClean, min.freq = 1, scale = c(4, .5),
+          max.words=100, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
 ## Generació de les regles
 
 En aquest apartat utilitzarem el algoritme apriori per a generar les regles d´associació.
@@ -199,7 +261,7 @@ Com a mostra, la següent línia de codi calcula el conjunt de regles amb els va
 rules <- apriori(tr, parameter = list(supp=0.001, conf=0.8, maxlen=10))
 ```
 
-Tot seguit es mostra un resúm del conjunt de regles:
+Tot seguit es mostra un resum del conjunt de regles:
 
 ```{r}
 # Visualitzem un resum
@@ -239,8 +301,8 @@ summary(rules)
 Com que hi ha només 18 regles les visualitzem per pantalla:
 
 ```{r}
-# Visualitzem les 10 primeres regles d´associació
-inspect(rules)
+# Visualitzem les  regles d´associació
+arules::inspect(rules)
 ```
 
 > Per exemple, podem observar en la sortida les següents regles:
@@ -251,10 +313,10 @@ inspect(rules)
 
 ## Cerca de regles segons conseqüent
 
-A tall d´exemple, supossem que necessitarem trobar les regles d´associació per a un determinat artista. Podem
+A tall d´exemple, suposem que necessitarem trobar les regles d´associació per a un determinat artista. Podem
 fer ús del paràmetre `appareance` de la funció `apriori()`, establint un o diversos  antecedents i un conseqüent amb __LHS (IF part)__ i __RHS (THEN part)__:
 
-Per exemple, per a respondre a la pregunta _"Quins artistes van escoltar els usuaris abans de escoltar Radiohead"_  ho fariem com es mostra a continuació:
+Per exemple, per a respondre a la pregunta _"Quins artistes van escoltar els usuaris abans de escoltar Radiohead"_  ho farem com es mostra a continuació:
 
 ```{r}
 rules <- apriori(tr, parameter = list(supp=0.003, conf=0.8),
@@ -264,14 +326,14 @@ rules <- apriori(tr, parameter = list(supp=0.003, conf=0.8),
 
 
 ```{r}
-inspect(head(rules))
+arules::inspect(head(rules))
 ```
 
 ## Visualització de les regles
 
 Podem visualitzar les regles d´associació amb `plot()` del paquet
-`arulesViz`. Utilitza la métrica de soport en l´eix d´ordenada i la confiança en 
-l´eix d´abscisses. A més, la métrica de millora (lift) es usada per colorejar
+`arulesViz`. Utilitza la mètrica de soport en l´eix d´ordenada i la confiança en 
+l´eix d´abscisses. A més, la mètrica de millora (lift) es usada per col orejar
 els punts.
 
 Per exemple, podem visualitzar el conjunt de regles amb un llindar de confiança del 80% com es mostra en el següent fragment de codi:
@@ -378,7 +440,7 @@ Abans d´aplicar les regles d´associació ens caldrà convertir el conjunt de d
 
 Per tant, ens caldrà agrupar les dades o bé per `CustomerID` o bé per `CustomerID` i `Date`; o també podem agrupar els articles per `InvoiceNo` i `Date`.
 
-Les següents línies de codi combinen tots els articles de una `InvoiceNo` i `date` en una fila i seperen els elements amb una coma:
+Les següents línies de codi combinen tots els articles de una `InvoiceNo` i `date` en una fila i separen els elements amb una coma:
 
 ```{r message=FALSE}
 # Agrupem articles per `InvoiceNo` i `dateInvoice`
@@ -388,12 +450,12 @@ transactionData <- ddply(retail,c("InvoiceNo","dateInvoice"),
                        collapse = ","))
 ```
 
-Com que les columnes `InvoiceNo` i `dateInvoice` no les usarem en les regles d´associó les el.liminem de `transactionData`:
+Com que les columnes `InvoiceNo` i `dateInvoice` no les usarem en les regles d´associació les eliminem de `transactionData`:
 
 ```{r}
-# El.liminem la columna
+# Eliminem la columna
 transactionData$InvoiceNo <- NULL
-# El.liminem la columna
+# Eliminem la columna
 transactionData$dateInvoice <- NULL
 # Cambiem el nom de la varialble a items
 colnames(transactionData) <- c("items")
@@ -501,7 +563,7 @@ Com a mostra, la següent línia de codi calcula el conjunt de regles amb els va
 rules <- apriori(tr, parameter = list(supp=0.001, conf=0.8, maxlen=10))
 ```
 
-Tot seguit es mostra un resúm del conjunt de regles:
+Tot seguit es mostra un resum del conjunt de regles:
 
 ```{r}
 # Visualitzem un resum
@@ -519,7 +581,7 @@ summary(rules)
 
 ## Establiment dels llindars de suport i confiança
 
-Seleccionem un nivell de suport del 5% i una confiança del 95%. Amb lo primer conseguim que cadascuna de les regles estigui present al menys el 5% de les mostres, lo que els hi otorga representativitat, mentres que amb lo segon obtenim la probabilitat de que les regles siguin certes a les mostres en les que els seus antecedents són certs també.
+Seleccionem un nivell de suport del 5% i una confiança del 95%. Amb lo primer aconseguim que cadascuna de les regles estigui present al menys el 5% de les mostres, lo que els hi otorga representativitat, mentres que amb lo segon obtenim la probabilitat de que les regles siguin certes a les mostres en les que els seus antecedents són certs també.
 
 ```{r eval=FALSE}
 # Executem el algoritme a priori amb
@@ -542,7 +604,7 @@ Com que hi ha 80, mostrem per pantalla les 10 primeres regles:
 
 ```{r}
 # Visualitzem les 10 primeres regles d´associació
-inspect(rules[1:10])
+arules::inspect(rules[1:10])
 ```
 
 > Per exemple, podem observar en la sortida les següents regles:
@@ -553,7 +615,7 @@ inspect(rules[1:10])
 
 ## Cerca de regles segons antecedent
 
-Per posar un exemple, supossem que necessitem trobar les regles d´associació per a un determinat article. Podem
+Per posar un exemple, suposem que necessitem trobar les regles d´associació per a un determinat article. Podem
 fer ús del paràmetre `appareance` de la funció `apriori()`. En aquest sentit, podem establir un o diversos  antecedents i un conseqüent amb __LHS (IF part)__ i __RHS (THEN part)__:
 
 Per exemple, per a respondre a la pregunta _"Els clients que compren METAL també compren ..."_  ho farem com es mostra a continuació:
@@ -567,14 +629,14 @@ metal_rules <- apriori(tr,  parameter = list(supp=0.001, conf=0.8),
 ```
 
 ```{r}
-inspect(head(metal_rules))
+arules::inspect(head(metal_rules))
 ```
 
 ## Visualització de les regles
 
 Podem visualitzar les regles d´associació amb `plot()` del paquet
-`arulesViz`. Utilitza la métrica de soport en l´eix d´ordenada i la confiança en 
-l´eix d´abscisses. A més, la métrica de millora (lift) es usada per colorejar
+`arulesViz`. Utilitza la mètrica de soport en l´eix d´ordenada i la confiança en 
+l´eix d´abscisses. A més, la mètrica de millora (lift) es usada per colorejar
 els punts.
 
 Per exemple, podem visualitzar el conjunt de regles amb un llindar de confiança del 95% com es mostra en el següent fragment de codi:
