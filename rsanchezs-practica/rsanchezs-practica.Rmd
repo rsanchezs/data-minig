@@ -1,0 +1,653 @@
+---
+output:
+  word_document:
+    highlight: zenburn
+    reference_docx: word-styles-reference-42.docx
+  html_document:
+    highlight: default
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+    includes:
+      in_header: 75.584-PRAC-header.html
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Format d´entrega 
+
+Aquest document s´ha realitzat mitjançant __Markdown__[^1] amb l´ajuda de l´entorn de desenvolupament __RStudio__[^2] utilitzant les característiques que aquest ofereix per
+a la creació de documents __R__ reproduïbles.
+
+La documentació generada en la realització de la pràctica  es troba allotjada en __GitHub__ al següent repositori:
+
+* https://github.com/rsanchezs/data-minig
+
+En aquest repositori es poden trobar els següents fitxers:
+
+* Aquest document en formats __pdf__ i __docx__ amb el nom rsanchezs_practica.
+* Un document __R Markdown__[^3] que es pot utilitzar per a reproduir tots els exemples
+presentats a la PAC.
+* El conjunt de dades utilitzades.
+
+
+>__Nota:__ Propietat intel·lectual
+
+> Sovint és inevitable, al produir una obra multimèdia, fer ús de recursos creats per terceres persones. És per tant comprensible fer-lo en el marc d'una pràctica dels Estudis, sempre que això es documenti clarament i no suposi plagi en la pràctica. 
+
+> Per tant, al presentar una pràctica que faci ús de recursos aliens, s'ha de presentar juntament amb ella un document en que es detallin tots ells, especificant el nom de cada recurs, el seu autor, el lloc on es va obtenir i el seu estatus legal: si l'obra està protegida pel copyright o s'acull a alguna altra llicència d'ús (Creative Commons, llicència GNU, GPL ...).
+L'estudiant haurà d'assegurar-se que la llicència no impedeix específicament el seu ús en el marc de la pràctica. En cas de no trobar la informació corresponent haurà d'assumir que l'obra està protegida per copyright.
+Hauríeu a més, d’adjuntar els fitxers originals quan les obres utilitzades siguin digitals, i el seu codi font si correspon
+
+> Un altre punt a considerar és que qualsevol pràctica que faci ús de recursos protegits pel copyright no podrà en cap cas publicar-se en Mosaic, la revista del Graduat en Multimèdia de la UOC, llevat que els propietaris dels drets intel·lectuals donin la seva autorització explícita  
+
+
+
+# PART I Preparació de les Dades
+
+## Definició de la tasca de mineria de dades
+
+
+Aquesta pràctica tracta de plantejar com podria ser un projecte real de mineria de dades. Com a analistes de dades a partir de la presentació del client que exposa un problema de negoci difús i molt genèric haurem de reconduir-lo com a projecte de mineria de dades. 
+
+El client ens proporciona un conjunt de dades extretes del seu ERP, format per les següent taules: `cabeceraticket`, `client`, `familia`, `lineasticket`, `pais`, `pedido`, `producto`, `promocion`, `proveedor`, `regiongeografica`, `seccion`, `subfamilia`, `tienda`.
+
+Els objectius principals del projecte de mineria de dades seran els següents:
+
+En primer lloc, com què tenim poca informació del domini i volem començar a tenir-ne una idea més clara, intentarem __trobar similituds i agrupar objectes semblants__.
+
+En segon lloc, a partir de la situació més informada obtinguda en el pas anterior, tractarem de __classificar els objectes__. El que es vol és estudiar millor les diferències entre grups i les seves característiques peculiars.
+
+> __PRIMER OBJECTIU__
+>--------------------------------------------------
+Trobar grups de clients semblants.
+
+> __SEGON OBJECTIU__
+>
+> Un cop separats els clients en diversos grups, volem saber quin és l´atribut que distingueix millor un grup de clients o l´altre.
+
+
+
+## Pre-processament de les Dades
+
+### Carrega i exàmen preliminar del conjunt de dades
+
+
+En primer lloc, instal.larem el paquet `readr`[^4] que forma part del ecosistema `tidyverse`[^5] i que ens permetrà llegir les dades:
+
+
+```{r eval=FALSE, warning=FALSE, comment=FALSE, message=FALSE}
+# La forma més sencilla de instal.lar readr es instal.lar tidyverse
+install.packages("tidyverse")
+
+# Alternativament, podem instal.lar només readr
+install.packages("readr")
+```
+
+[^4]: Paquet per a la lectura de dades amb format rectangular: https://readr.tidyverse.org/
+[^5]: Conjunt de paquets R per a la Ciència de les Dades :https://www.tidyverse.org/
+
+
+
+
+Un cop instal.lat el paquet el carregarem a la sessió R mitjançant la següent línia de codi:
+
+```{r message=FALSE, warning=FALSE}
+# Carrega de readr
+library(readr)
+
+# Alternativament, com que forma part de tidyverse
+library(tidyverse)
+```
+
+Observem que, hem fet ús de la segona opció que carrega tots els paquets de `tidyverse`,
+ja que utilitzarem per a la realització de la pràctica altres paquets, com per exemple:
+`dplyr` (per a la transformació de dades),`tibble` (per a un tractament més refinat de
+`data.frames`), `ggplot2` (per a la visualització de les dades), etc.
+
+
+Un cop carregat el paquet a la sessió R, ja podem fer ús de les funcions. Per a importar les dades dels clients i els seus ticket de compra utilitzarem la funció `read_csv()` de la següent manera:
+
+```{r message=FALSE, warning=FALSE}
+# Carreguem la llibreria que ens permet importar arxius CSV
+if (!require("readr")) {
+  # Instal.lació de la llibreria
+install.packages("readr")
+# Carreguem la llibreria 
+library(readr)
+}
+client <- read_csv("data/gourmetdb/cliente.csv", 
+                    col_names = FALSE)
+ticket <- library(readr)
+ticket <- read_csv("data/gourmetdb/cabeceraticket.cvs", 
+                    col_names = FALSE)
+```
+
+Convertim el conjunt de dades `client` que és del tipus `data.frame` a `tibble`:
+
+```{r}
+# Convertim el dataframe a tibble
+as_tibble(client)
+```
+
+Podem adonar-nos que, el conjunt de dades està format per 4.069 observacions i 12 variables. A més, amb l´ajuda de `tibble` també podem observar el tipus per a cada columna.
+
+Com que el nom de les columnes es poc descriptiu per alguns dels atributs, personalitzarem
+els noms mitjançant la següent línia de codi:
+
+```{r}
+# Noms dels atributs
+names(client) <- c("CODCLIENT", "NOMCLIENT", "GENERE", "DATANAIXEMENT", "ESTATCIVIL", 
+                   "DIRECCIO", "PROFESSIO", "NROFILLS", "REGIO",
+                   "NACIONALITAT","TOTALCOMPRES","PUNTSACUMULATS")
+names(ticket) <- c("CODVENTA", "NOMTENDA", "DATA", "HORA", "FORMAPAGAMENT", 
+                   "CODCLIENT", "TOTALIMPORT", "TOTALUNITATS", "PUNTSTICKET")
+```
+
+Podem comprovar el nom de les columnes mitjançant la funció `colnames`:
+
+```{r}
+# Comprovem es nom de les columnes
+colnames(client)
+```
+
+```{r}
+# Comprovem es nom de les columnes
+colnames(ticket)
+```
+
+
+
+
+### Exploració i tractament de valors desconeguts
+
+
+Per altra banda, ens caldria comprovar que el nostre conjunt de dades no conté valors
+desconeguts. En primer lloc comprovem el conjunt de dades client:
+
+```{r}
+# Estadístiques de valors buits client
+colSums(is.na(client))
+
+```
+
+
+
+Com es pot observar la variable `estatcivil` conté 805 observacions amb valors desconeguts. Amb l´objectiu de fer aquest grup més descriptiu podríem canviar aquests valors per la constant `Desconegut`:
+
+
+```{r}
+# Amb l´ajuda de un test lògic descobrim els valors desconeguts
+missing_values_estat_civil <- is.na(client$ESTATCIVIL)
+# Reemplacem els valors desconeguts amb la  constant
+client$ESTATCIVIL[missing_values_estat_civil] <- "Desconegut"
+```
+
+A més, fixe-mos que la variable `nombrefills` també conté 805 observacions amb valors desconeguts. En aquest cas, reemplaçarem els valor desconeguts amb un valor aleatori de la distribució de la variable. Em primer lloc, amb l´ajuda d´un test lógic descobrim els valors desconeguts:
+
+```{r}
+# Amb l´ajuda de un test lògic descobrim els valors desconeguts
+missing_values_nombrefills <- is.na(client$NROFILLS)
+```
+
+A continuació, generem un valor aleatori de la distribució de la variable:
+
+
+```{r}
+# Generem observacions aleàtories
+random_nombrefills_obs <- sample(na.omit(client$NROFILLS), 1)
+random_nombrefills_obs
+```
+
+Finalment, reemplacem els valors desconeguts amb el valor aleatori calculat en en fragment de codi anterior:
+
+```{r}
+# Reemplacem els valors desconeguts amb la observació aleàtoria
+
+client$NROFILLS[missing_values_nombrefills] <-random_nombrefills_obs
+```
+
+Pel que fa al conjunt de dades `ticket` realitzarem les mateixes tasques que hem realitzat amb els clients. Així començarem comprovant que no tinguem dades desconegudes:
+
+```{r}
+# Estadístiques de valors buits tickets
+colSums(is.na(ticket))
+```
+
+Com es pot comprobar a l´anterior fragment de codi el conjunt de dades `ticket` no conté cap valor buit o desconegut per a cap de les seus variables.
+
+
+
+### Transformació d´atributs
+
+L´objectiu principal d´aquest apartat es realitzar tasques de transformació en les variables del nostre conjunt de dades.
+
+Per a facilitar l´ànalisi sería convenient canviar els atributs de tipus `character` a `factor`, que és la manera que té R de tractar amb les variables de tipus categòric:
+
+
+```{r warning=FALSE, message=FALSE}
+# Carreguem ecosistema tidyverse
+if (!require("tidyverse")) {
+  # Instal.lació de la llibreria
+install.packages("tidyverse")
+# Carreguem la llibreria 
+library(tidyverse)
+}
+# Canviem les variables de tipus `character` a `factor`
+cols <- c('CODCLIENT', 'NOMCLIENT', 'GENERE', 'ESTATCIVIL', 'DIRECCIO',
+          'PROFESSIO', 'REGIO', 'NACIONALITAT')
+client <- mutate_at(client, cols, as.factor)
+```
+
+
+Així mateix, ens caldrà realitzar el mateix amb les variables de tipus `charater` en el conjunt de dades `ticket`:
+
+```{r}
+# Canviem les variables de tipus `character` a `factor`
+cols <- c('CODVENTA', 'NOMTENDA', 'FORMAPAGAMENT', 'CODCLIENT')
+ticket <- mutate_at(ticket, cols, as.factor)
+```
+
+
+
+Fixe-mos amb el codi anterior que amb l´ajuda de la funció `dplyr::mutate_at`[^6] hem canviat les columnes de tipus `character` al tipus `factor`. 
+
+Amb el següent fragment de codi i amb l´ajuda de la funció `lapply()` verifiquem que s´han produït els canvis. Per exemple, comprovem-ho amb el conjunt de dades `client`:
+
+```{r}
+# Retorna el tipus de cada variable
+lapply(client, class)
+```
+
+
+[^6]: La notació `paquet::nom_funció` s´utilitza per a indicar a R que es vol fer ús de la funció del paquet indicat, en el cas que existeixi ambigüitat amb el nom d´una funció en un altre paquet.
+
+
+Així mateix, ens sería pràctic convertir la variable `naixement` del tipus `numeric` a `date`:
+
+
+```{r message=FALSE, warning=FALSE}
+# Carreguem lubridate per al tractament de dades de tipus date
+if (!require("lubridate")) {
+  # Instal.lació de la llibreria
+install.packages("lubridate")
+# Carreguem la llibreria 
+library(lubridate)
+}
+# Convertim la variable naixement a tipus date
+client <- client %>% mutate_at("DATANAIXEMENT", funs(ymd))
+```
+
+Gràcies a l´anterior canvi de tipus podem calcular l´edat del client de la següent manera:
+
+
+```{r}
+# Carreguem ecosistema tidyverse
+if (!require("tidyverse")) {
+  # Instal.lació de la llibreria
+install.packages("tidyverse")
+# Carreguem la llibreria 
+library(tidyverse)
+}
+client <- client %>%  
+        mutate(EDAT = year(Sys.Date()) - year(client$DATANAIXEMENT))
+
+```
+
+
+En un altre ordre de coses, crearem un nou conjunt de dades que es tractara de la consulta __left-join__ de les taules `client` i `ticket` que estan relacionades a la fase de dades per la clau forana `CODCLIENT`:
+
+
+```{r warning=FALSE}
+# Selecciona les observacions que apareixen almenys en una de les taules
+# cpnservant totes les observacions de ticket
+tickets_client <- left_join(client, ticket, by = "CODCLIENT")
+```
+
+
+A continuació, crearem una nova columna amb la suma dels imports totals dels tickets per a cada client. Es a dir, agruparem les observaciones per client i calcularem una nova variable amg la funció d´agregació `sum()`:
+
+
+```{r}
+# Agrupem per client i realitzem la suma del import de cada ticket
+import_total_tickets_client <- tickets_client %>% 
+                          group_by(CODCLIENT) %>% 
+                          summarise(TOTAL = sum(TOTALIMPORT)) 
+
+```
+
+Al següent fragment de codi afegim la variable creada anteriorment al conjunt de dades `tickets_client`:
+
+
+```{r}
+tickets_client <- tickets_client %>% select(-CODVENTA, -DATA, 
+                                            -HORA, -FORMAPAGAMENT,
+                                            -TOTALIMPORT, -TOTALUNITATS,
+                                            -PUNTSTICKET) %>% 
+                          group_by(CODCLIENT) %>% 
+                          na.omit(.) %>% 
+                          distinct(.) %>% 
+                          left_join(import_total_tickets_client,
+                                    by = "CODCLIENT")
+```
+
+
+
+### Reducció de la dimensionalitat
+
+Per a la simplificació de l´anàlisi les següents variables són descartades:
+
+```{r}
+# Reducció de la dimensionalitat
+tickets_client$CODCLIENT <- NULL
+tickets_client$NOMCLIENT <- NULL
+tickets_client$DIRECCIO <- NULL
+tickets_client$DATANAIXEMENT <- NULL
+```
+
+Els motius són els següents:
+
+* La variable `codi` representa la clau primaria en la base de dades i no ens proporcionará informació per a estudiar millor les diferències entre grups.
+
+* La variable `nom` pot ser el.liminada pel fet que, es tracta del nom del individu i que té funcions de particularització o individualització i no ens serveix per a les tasques d´agrupació i classificació.
+
+* La variable `direccio` es tracta de la direcció del domicili del client i no ens proporciona informació rellevant per a la nostra anàlisi. En canvi, les variables `regio` i `nacionalitat` són atributs més adequats per al nostre proposit.
+
+* La variable `naixement` pot ser el.liminada, ja que representa la data de naixement del client i no proporciona informació per al nostre model. No obstant, la edat del client es una característica peculiar i es pot estimar a partir de la data de naixement i la data actual.  Aquest atribut ja ha sigut calculat i representat amb la variable `edat`.
+
+
+Recollint tot el que s´ha realitzat, tenim 11 atributs per a la nostra anàlisi i 2923 observacions en el conjunt de dades `client`:
+
+```{r}
+# Obtenim el nom de les variables
+colnames(tickets_client)
+# Obtenim la dimensió
+dim(tickets_client)
+```
+
+### Identificació de _outliers_
+
+```{r}
+
+```
+
+
+
+
+### Transformació de les Dades
+
+Per a la _normalització_ del conjunt de dades `client` utilitzarem el __mètode d´estandardització de valors__ assegurant-nos que s´obtenen valors dins el rang escollit que tenen la propietat que la seva mitjana és zero i la seva desviacióestàndard val 1.
+
+Es a dir, l´estandardització consisteix en la diferència entre el valor de l´atribut i la seva mitjana, dividint aquesta diferència per la desviació estàndard dels valors de l´atribut. Es a dir:
+
+$$Z-score\quad =\quad \frac { X\quad -\quad mean(X) }{ SD(X) } $$
+
+
+En el següent fragment discretitzarem les variables `nombrefills`, `totalcompres`, `puntsacumulats`,
+`edat` estandaritzant-les amb l´ajuda de la funció `scale()`:
+
+
+```{r eval=FALSE}
+tickets_client <- tickets_client %>% mutate_at(vars(NROFILLS, TOTALCOMPRES
+                                                    PUNTSACUMULATS, EDAT
+                                                    TOTAL), 
+                                                    funs(scale(.)))
+```
+
+
+
+
+## Anàlisi Exploratori de les Dades
+
+https://artyco.com/como-clasificar-segmentar-clientes/
+
+
+
+
+
+# PART II Clustering
+
+## Requisits
+
+Per començar, per a la realització del nostre anàlisi necessitarem els següents 
+paquets:
+
+* `cluster` per a la computació dels algoritmes d´agregació.
+* `factoextra` per a la visualització de resultats d´agregació i que es fonamenta
+en el paquet `ggplot2`.[^7]
+* `clValid` que s´utilitza per a comparar els mètodes d´agregació.
+* `clustertend` per avaluar estadisticament de les tendencies d´agregació.
+
+El paquet `factoextra` conté funcions per anàlisi de _clustering_ i visualització dels
+resultats:
+
+| Funció | Descripció |
+|---|---|
+|`dist(fviz_dist, get_dist)`  | Visualització i computació de la matriu de distàncies |
+| `get_clust_tendency` | Avaluació de la tendència d´agregació |
+| `fviz_nbclust(fviz_gap_stat)` | Determinació del nombre òptim de clústers |
+| `fviz_dend` | Visualització de dendrogrames |
+| `fviz_cluster` | Visualització dels resultats d´agrupament |
+| `fviz_mclust` | Visualització dels resultats del model d´agrupament |
+| `fviz_silhouette` | Visualització de la informació de la silueta |
+| `hkmeans` | K-means jeràrquic |
+| `eclust` | Visualització de l´anàlisi de agrupament |
+
+
+Podem instal·lar els dos paquets com es mostra en la següent línia de codi:
+
+```{r eval=FALSE}
+# Instalació paquets clustering
+install.packages(c("cluster", "factoextra", "clValid", "clustertend"))
+```
+
+
+En acabat, ens caldrà carregar les llibreries a la sessió R:
+
+```{r message=FALSE}
+# Carreguem les llibreries
+library(cluster)
+library(factoextra)
+library(clValid)
+```
+
+
+[^7]: La documentació oficial es pot trobar a: http://www.sthda.com/english/rpkgs/factoextra.
+
+
+
+## Determinació del nombre de clústers
+
+Per a determinar el nombre de clústers farem ús de la funció `fviz_nbclust()` del
+paquet `factoextra` que calcula els mètodes __Elbow__, __Silhouhette__ i __Gap__.
+
+El prototip de la funció es el següent:
+
+```{r eval=FALSE}
+fviz_nbclust(x, FUNcluster, method = c("silhouette", "wss", "gap_stat"))
+```
+
+on els arguments són els següents:
+
+* **x:** matriu o data frame.
+* **FUNcluster:** una funció d´agregació. Valors possibles: kmeans, pam, clara i hcut.
+* **method:** mètode per a determinar el nombre òptim de clústers. Valors possibles:
+ __Elbow__, __Silhouhette__ i __Gap__
+
+
+Per al nostre anàlisi de la segmentació dels nostres clients utilitzarem el següent conjunt de prova:
+
+```{r}
+# Conjunt de prova
+train <- tickets_client[, c("EDAT", "TOTALCOMPRES", "TOTAL")]
+```
+
+
+
+A continuació, es mostra com determinar el nombre òptim de particions per al mètode **_k-means_**:
+
+
+```{r dpi=300, message=FALSE, warning=FALSE}
+# Mètode elbow
+fviz_nbclust(train, kmeans, method = "wss") +
+  geom_vline(xintercept = 4, linetype = 2) +
+  labs(x = "Nombre de particions k", 
+       y = "Total intra-clúster suma de quadrats",
+       title = "Nombre òptim de particions",
+       subtitle = "Mètode Elbow") +
+  theme_classic() +
+  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
+         plot.subtitle = element_text(color="#4F81BD", size=14))
+  
+       
+  
+
+# Mètode Silhouette
+fviz_nbclust(train, kmeans, method = "silhouette") +
+  labs(x = "Nombre de particions k", 
+       y = "Ample de la mitjana de la silueta",
+       title = "Nombre òptim de particions", 
+       subtitle = "Mètode Silhouette") +
+  theme_classic() +
+  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
+        plot.subtitle = element_text(color="#4F81BD", size=14))
+  
+
+
+
+# Mètode Gap
+set.seed(123)
+fviz_nbclust(train, kmeans, nstart = 25, 
+             method = "gap_stat", nboot = 5) +
+  labs(x = "Nombre de particions k", 
+       y = "Valor de Gap (k)",
+       title = "Nombre òptim de particions",
+       subtitle = "Mètode Gap") +
+  theme_classic() +
+  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
+        plot.subtitle = element_text(color="#4F81BD", size=14))
+  
+  
+```
+
+>Com podem observar en els gràfics:
+>
+* El mètode Elbow ens suggereix 4 clústers.
+* El mètode Silhoutte ens suggereix 2 clústers.
+* El mètode Gap ens sugereix 4 clústers.
+
+
+
+Així és que, segons aquestes observacions podem considerar _k_ = 4 com el nombre òptim de clústers.
+
+
+## Mètode d´agregació _k-means_
+
+A causa de que, l´algoritme _k-means_ comença seleccionant un centroide aleatòriament, es recomanable fer ús de la funció `set.seed()` a l´efecte de
+aconseguir resultats reproduïbles. Així el lector d´aquest document obtindrà
+els mateixos resultats que es presenten tot seguit.
+
+A continuació es mostra com aplicar l´algorisme k-means amb k = 2:
+
+```{r}
+# Execució k-means amb k = 2
+set.seed(123)
+kmeansFit <- kmeans(train, 2, nstart = 25)
+```
+
+Podem mostrar per pantalla els resultats amb la següent línia de codi:
+
+```{r}
+# Mostrem els resultats
+print(kmeansFit)
+```
+
+> Podem observar en la sortida el següent:
+>
+* La mitjana de clústers: una matriu, on les files són el nombre de clúster i
+les columnes són les variables.
+* El vector de particions: un vector d´enters (de 1:k) que indica el clúster on
+cada observació ha sigut agrupada.
+
+Així mateix, és recomanable realitzar un gràfic amb els resultats del model. Ja sigui, per a escollir el nombre de clústers, ja sigui per a comparar diferents anàlisis.
+
+Una possible opció és visualitzar les dades en un diagrama de dispersió acolorint cada observació d'acord al grup assignat.
+
+El problema és que el nostre conjunt de dades conté més de 2 variables i no és possible representar el model en dues dimensions.
+
+Convé fer ressaltar que, una possible solució és reduir la dimensionalitat fent ús d´un algoritme de reducció del nombre d´atributs, com per exemple __Principal Component Analysis (PCA)__. 
+
+En aquest sentit, farem ús de la funció `fviz_cluster()` que ens permetrà visualitzar els clústers i que utilitza PCA quan el nombre de variables és més gran de 2. Passarem com a arguments el resultat del model i el conjunt de dades original:
+
+```{r dpi=300, fig.width=7, fig.height=7}
+# Visualitzem els clústers
+fviz_cluster(kmeansFit, data = train,
+    main = "Gràfic de clústers",
+    palette = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+    ellipse.type = "euclid", 
+    star.plot = TRUE,
+    repel = TRUE,
+    ggtheme = theme_minimal()) + 
+  theme(legend.position = "bottom",
+        plot.title = element_text(color="#4F81BD", size=16, face="bold"))
+
+```
+
+Podem observar en el gràfic que les observacions són representades mitjançant punts i que en el nostre cas s´ha usat PCA. A més, s´han dibuixat el.lipses per tal  de
+diferenciar cada clúster.
+
+
+
+
+
+
+
+
+# PART III Classificació
+# PART IV Regles d´associació
+# PART V Conclusions i Recomanacions al Client
+
+
+
+
+
+
+
+
+[^1]: https://es.wikipedia.org/wiki/Markdown
+[^2]: https://www.rstudio.com/
+[^3]: https://rmarkdown.rstudio.com/
+
+
+
+
+
+
+
+
+
+# Bibliografia
+
+
+
+[1] Daniel T. Larouse, Chantal D. Larouse: Data Mininig and Predictive Analytics.USA, John Wiley & Sons,2015,ISBN 978-1-118-11619-7
+
+[2] Jordi Gironés Roig, Jordi Casas Roma, Julià Minguillón Alfonso, Ramon Caihuelas Quiles : Minería de Datos: Modelos y Algoritmos. Barcelona, Editorial UOC, 2017, ISBN: 978-84-9116-904-8.
+
+[3] Jiawe Han, Michellie Chamber & Jian Pei: Data mining : concepts and techniques. 3º Edition. USA, Editorial Elsevier, 2012, ISBN 978-0-12-381479-1
+
+
+
+
+
+
+
+
+
