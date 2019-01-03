@@ -302,6 +302,33 @@ client <- client %>%
 ```
 
 
+Realitzem un resúm estadístic de la variable `EDAT`:
+
+```{r}
+# Resúm estadístic
+summary(client$EDAT)
+```
+
+Fixe-mos que el rang està comprés entre 40 i 109 anys, sembla que la edat estigui mal calculada. Si analitzem com hem calculat la edat anteriorment podem comprovar que els calculs són correctes, ja que hem realitzat la diferencia de la data actual amb la data de naixement.
+
+En conseqüència, ens fa pensar que el conjunt de dades de la base de dades `GourmetBD` està format per valors pretèrits. Per aquest motiu, anem a calcular
+de nou la variable `EDAT` però en aquest cas utilitzamen com a any en curs el
+1992:
+
+```{r}
+# Calculem la edat client utilitzant com a any en curs 1992
+client <- client %>%  
+        mutate(EDAT = 1992 - year(client$DATANAIXEMENT))
+```
+
+Concretament, després de realitzar els nous calculs podem comprovar que el rang està entre 13 i 82:
+
+```{r}
+range(client$EDAT)
+```
+
+
+
 En un altre ordre de coses, crearem un nou conjunt de dades que es tractara de la consulta __left-join__ de les taules `client` i `ticket` que estan relacionades a la fase de dades per la clau forana `CODCLIENT`:
 
 
@@ -339,14 +366,33 @@ tickets_client <- tickets_client %>% select(-CODVENTA, -DATA,
 ```
 
 
+Com hem anteriorment sería convenient canviar els atributs de tipus `character` a `factor`, que és la manera que té R de tractar amb les variables de tipus categòric:
 
-### Reducció de la dimensionalitat
+
+```{r warning=FALSE, message=FALSE}
+# Carreguem ecosistema tidyverse
+if (!require("tidyverse")) {
+  # Instal.lació de la llibreria
+install.packages("tidyverse")
+# Carreguem la llibreria 
+library(tidyverse)
+}
+# Canviem les variables de tipus `character` a `factor`
+cols <- c('CODCLIENT', 'NOMCLIENT', 'GENERE', 'ESTATCIVIL', 'DIRECCIO',
+          'PROFESSIO', 'REGIO', 'NACIONALITAT')
+client <- mutate_at(client, cols, as.factor)
+```
+
+
+
+
+### Reducció de la Dimensionalitat
 
 Per a la simplificació de l´anàlisi les següents variables són descartades:
 
 ```{r}
 # Reducció de la dimensionalitat
-tickets_client$CODCLIENT <- NULL
+#tickets_client$CODCLIENT <- NULL
 tickets_client$NOMCLIENT <- NULL
 tickets_client$DIRECCIO <- NULL
 tickets_client$DATANAIXEMENT <- NULL
@@ -383,15 +429,14 @@ dim(tickets_client)
 
 ### Transformació de les Dades
 
-Per a la _normalització_ del conjunt de dades `client` utilitzarem el __mètode d´estandardització de valors__ assegurant-nos que s´obtenen valors dins el rang escollit que tenen la propietat que la seva mitjana és zero i la seva desviacióestàndard val 1.
+Per a la _normalització_ del conjunt de dades `tickets_client` utilitzarem el __mètode d´estandardització de valors__ assegurant-nos que s´obtenen valors dins el rang escollit que tenen la propietat que la seva mitjana és zero i la seva desviacióestàndard val 1.
 
 Es a dir, l´estandardització consisteix en la diferència entre el valor de l´atribut i la seva mitjana, dividint aquesta diferència per la desviació estàndard dels valors de l´atribut. Es a dir:
 
 $$Z-score\quad =\quad \frac { X\quad -\quad mean(X) }{ SD(X) } $$
 
 
-En el següent fragment discretitzarem les variables `nombrefills`, `totalcompres`, `puntsacumulats`,
-`edat` estandaritzant-les amb l´ajuda de la funció `scale()`:
+En el següent fragment discretitzarem les variables `NROFILLS`, `PUNTSACUMULATS`, `EDAT` i `TOTAL`estandaritzant-les amb l´ajuda de la funció `scale()`:
 
 
 ```{r eval=FALSE}
@@ -402,11 +447,19 @@ tickets_client <- tickets_client %>% mutate_at(vars(NROFILLS, TOTALCOMPRES
 ```
 
 
+A banda d´això, per a facilitar el nostre anàlisi i en concret l´anàlisi exploratori de les dades, realitzarem una segmentació dels nostres clients respecte la freqüència de compra.
+
+Així, realitzarem una discretització utilitzant l´atribut `TOTALCOMPRAS` que
+pren els valors entre 1 i 48 dividint els valors entre els conjunts: __FREQUENTE__, __HABITUAL__ i __OCASIONAL__.
+
+
 
 
 ## Anàlisi Exploratori de les Dades
 
 https://artyco.com/como-clasificar-segmentar-clientes/
+
+
 
 
 
