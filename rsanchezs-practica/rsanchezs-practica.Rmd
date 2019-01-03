@@ -247,7 +247,7 @@ client <- mutate_at(client, cols, as.factor)
 ```
 
 
-Així mateix, ens caldrà realitzar el mateix amb les variables de tipus `charater` en el conjunt de dades `ticket`:
+De la mateixa manera, ens caldrà fer igual amb les variables de tipus `charater` en el conjunt de dades `ticket`:
 
 ```{r}
 # Canviem les variables de tipus `character` a `factor`
@@ -270,7 +270,7 @@ lapply(client, class)
 [^6]: La notació `paquet::nom_funció` s´utilitza per a indicar a R que es vol fer ús de la funció del paquet indicat, en el cas que existeixi ambigüitat amb el nom d´una funció en un altre paquet.
 
 
-Així mateix, ens sería pràctic convertir la variable `naixement` del tipus `numeric` a `date`:
+Cal fer esment específic que sería pràctic convertir la variable `naixement` del tipus `numeric` a `date`:
 
 
 ```{r message=FALSE, warning=FALSE}
@@ -449,20 +449,147 @@ tickets_client <- tickets_client %>% mutate_at(vars(NROFILLS, TOTALCOMPRES
 
 A banda d´això, per a facilitar el nostre anàlisi i en concret l´anàlisi exploratori de les dades, realitzarem una segmentació dels nostres clients respecte la freqüència de compra.
 
-Així, realitzarem una discretització utilitzant l´atribut `TOTALCOMPRAS` que
+Així, realitzarem una discretització utilitzant l´atribut `TOTALCOMPRES` que
 pren els valors entre 1 i 48 dividint els valors entre els conjunts: __FREQUENTE__, __HABITUAL__ i __OCASIONAL__.
 
+En primer lloc, hem de calcular la distribució de freqüencies absolutes de la variable
+`TOTALCOMPRES`:
 
+```{r}
+total_compres <- tickets_client$TOTALCOMPRES
+breaks <- seq(1, 48, by = 5)
+total_compres_cut <- cut(total_compres, breaks, by = 5, right = FALSE)
+total_compres_freq <- table(total_compres_cut)
+```
+
+Amb la funció `nrow()` podem trobar la freqüencia total $n$ del conjunt de dades, així podem realitzar el cocient de les freqüencies absolutes per $n$. De manera que, la
+__distribució de freqüencies relatives__ es:
+
+```{r}
+# Càlcul distribució freqüencies relatives total compres per client
+total_compres_relfreq <- total_compres_freq / nrow(tickets_client)
+cbind(total_compres_freq, total_compres_relfreq)
+```
+
+Finalment, creem una nova variable que classificarà els nostres clients segons la 
+freqüencia de compra:
+
+
+```{r}
+tickets_client <- tickets_client %>% 
+        mutate(FREQCOMPRA = case_when(between(TOTALCOMPRES, 1, 5) ~ "OCASIONAL",
+                                  between(TOTALCOMPRES, 6, 21) ~ "FRECUENTE",
+                                  between(TOTALCOMPRES, 22, 48) ~ "HABITUAL" ))
+```
 
 
 ## Anàlisi Exploratori de les Dades
 
-https://artyco.com/como-clasificar-segmentar-clientes/
+En primer lloc, passem a estudiar la variable `GENERE` respecte a `FREQCOMPRA`. Per tal d´explorar la relació entre aquestes variables realitzarem les següents operacions:
+
+- Agrupar el conjunt de dades per la variable `GENERE`.
+- Contar el nombre d´observacions de la variable `FREQCOMPRA` que apareixen en cada classe del atribut `GENERE`.
+- Calcular el percentatge en cada classe segons la variable `FREQCOMPRA`.
+
+Totes aquestes operacions queden simplificades amb l´ajuda de les funcions `group_by` i `count` del paquet `dplyr`, i de l´operador ` %>% `:
+
+
+```{r dpi=300, fig.width = 12, fig.height = 8}
+# Gràfic barra genere vs freqüència compra
+tickets_client %>% 
+  group_by(GENERE) %>% 
+   count(FREQCOMPRA) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = GENERE, y = n, fill = FREQCOMPRA)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%"))) +
+    theme(axis.text.x = element_text (size = 10, angle=45))
+
+```
+
+És a saber, que obtenim els mateixos resultats que al gràfic anterior però en format de resúm amb el següent codi:
+
+```{r}
+# Resúm de les dades
+tickets_client %>% 
+  group_by(GENERE) %>% 
+  count(FREQCOMPRA) %>% 
+  mutate(FREQ = round(n / sum(n) * 100, 0)) 
+```
 
 
 
 
 
+En segon lloc, estudiarem la variable `ESTATCIVIL`. Realitzant els mateixos passos que en el apartat anterior obtenim el següent diagrama de barres apilat:
+
+```{r dpi=300, fig.width = 12, fig.height = 8}
+# Gràfic barra estat civil vs freqüència de compra
+tickets_client %>% 
+  group_by(ESTATCIVIL) %>% 
+   count(FREQCOMPRA) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = ESTATCIVIL, y = n, fill = FREQCOMPRA)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%"))) +
+    theme(axis.text.x = element_text (size = 14, angle=45))
+
+```
+
+
+
+Prosseguim el nostre anàlisi amb la variable `PROFESSIO`. Igual com hem fet anteriorment obtenim el següent diagrama de barres:
+
+
+```{r dpi=300, fig.width = 12, fig.height=10}
+# Gràfic barra professió vs freqüència de compra
+tickets_client %>% 
+  group_by(PROFESSIO) %>% 
+   count(FREQCOMPRA) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = PROFESSIO, y = n, fill = FREQCOMPRA)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%"))) +
+    theme(axis.text.x = element_text (size = 14, angle=90))
+
+```
+
+
+Avançant en el nostre anàlisi exploratori , passem a examinar la covariació entre les variables `REGIO` i `FREQCOMPRA`:
+
+
+```{r dpi=300, fig.width = 12, fig.height=8}
+# Gràfic barra regio vs freqüència de compra
+tickets_client %>% 
+  group_by(REGIO) %>% 
+   count(FREQCOMPRA) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = REGIO, y = n, fill = FREQCOMPRA)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%"))) +
+    theme(axis.text.x = element_text (size = 14, angle=45))
+
+```
+
+
+
+Per acabar, analitzem la variable `NACIONALITAT`. El següent fragmet de codi ens
+mostra una representació gràfica en diagrama de barres apilat de la variable respecte
+a `FREQCOMPRA`:
+
+
+```{r dpi=300, fig.width = 12, fig.height=8}
+# Gràfic barra regio vs freqüència de compra
+tickets_client %>% 
+  group_by(NACIONALITAT) %>% 
+   count(FREQCOMPRA) %>% 
+    mutate(freq = round(n / sum(n) * 100, 0)) %>% 
+    ggplot(mapping = aes(x = NACIONALITAT, y = n, fill = FREQCOMPRA)) +
+    geom_bar(stat = "identity") +
+    geom_text(aes(label = paste(freq, "%"))) +
+    theme(axis.text.x = element_text (size = 14, angle=45))
+
+```
 
 
 # PART II Clustering
@@ -537,9 +664,12 @@ on els arguments són els següents:
 
 Per al nostre anàlisi de la segmentació dels nostres clients utilitzarem el següent conjunt de prova:
 
-```{r}
-# Conjunt de prova
-train <- tickets_client[, c("EDAT", "TOTALCOMPRES", "TOTAL")]
+
+```{r echo=FALSE}
+tickets_client <- tickets_client %>% 
+                  ungroup() %>% 
+                  sample_frac(size = 0.3, replace = TRUE)
+  
 ```
 
 
@@ -549,7 +679,7 @@ A continuació, es mostra com determinar el nombre òptim de particions per al m
 
 ```{r dpi=300, message=FALSE, warning=FALSE}
 # Mètode elbow
-fviz_nbclust(train, kmeans, method = "wss") +
+fviz_nbclust(tickets_client, kmeans, method = "wss") +
   geom_vline(xintercept = 4, linetype = 2) +
   labs(x = "Nombre de particions k", 
        y = "Total intra-clúster suma de quadrats",
@@ -563,7 +693,7 @@ fviz_nbclust(train, kmeans, method = "wss") +
   
 
 # Mètode Silhouette
-fviz_nbclust(train, kmeans, method = "silhouette") +
+fviz_nbclust(tickets_client, kmeans, method = "silhouette") +
   labs(x = "Nombre de particions k", 
        y = "Ample de la mitjana de la silueta",
        title = "Nombre òptim de particions", 
@@ -577,7 +707,7 @@ fviz_nbclust(train, kmeans, method = "silhouette") +
 
 # Mètode Gap
 set.seed(123)
-fviz_nbclust(train, kmeans, nstart = 25, 
+fviz_nbclust(tickets_client, kmeans, nstart = 25, 
              method = "gap_stat", nboot = 5) +
   labs(x = "Nombre de particions k", 
        y = "Valor de Gap (k)",
@@ -610,9 +740,9 @@ els mateixos resultats que es presenten tot seguit.
 A continuació es mostra com aplicar l´algorisme k-means amb k = 2:
 
 ```{r}
-# Execució k-means amb k = 2
+# Execució k-means amb k = 4
 set.seed(123)
-kmeansFit <- kmeans(train, 2, nstart = 25)
+kmeansFit <- kmeans(tickets_client, 4, nstart = 25)
 ```
 
 Podem mostrar per pantalla els resultats amb la següent línia de codi:
@@ -641,7 +771,7 @@ En aquest sentit, farem ús de la funció `fviz_cluster()` que ens permetrà vis
 
 ```{r dpi=300, fig.width=7, fig.height=7}
 # Visualitzem els clústers
-fviz_cluster(kmeansFit, data = train,
+fviz_cluster(kmeansFit, data = tickets_client, stand = TRUE,
     main = "Gràfic de clústers",
     palette = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
     ellipse.type = "euclid", 
@@ -655,9 +785,6 @@ fviz_cluster(kmeansFit, data = train,
 
 Podem observar en el gràfic que les observacions són representades mitjançant punts i que en el nostre cas s´ha usat PCA. A més, s´han dibuixat el.lipses per tal  de
 diferenciar cada clúster.
-
-
-
 
 
 
