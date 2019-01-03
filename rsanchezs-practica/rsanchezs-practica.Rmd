@@ -38,6 +38,13 @@ presentats a la PAC.
 * El conjunt de dades utilitzades.
 
 
+[^1]: https://es.wikipedia.org/wiki/Markdown
+[^2]: https://www.rstudio.com/
+[^3]: https://rmarkdown.rstudio.com/
+
+
+
+
 >__Nota:__ Propietat intel·lectual
 
 > Sovint és inevitable, al produir una obra multimèdia, fer ús de recursos creats per terceres persones. És per tant comprensible fer-lo en el marc d'una pràctica dels Estudis, sempre que això es documenti clarament i no suposi plagi en la pràctica. 
@@ -666,10 +673,8 @@ Per al nostre anàlisi de la segmentació dels nostres clients utilitzarem el se
 
 
 ```{r echo=FALSE}
-tickets_client <- tickets_client %>% 
-                  ungroup() %>% 
-                  sample_frac(size = 0.3, replace = TRUE)
-  
+tickets <- tickets_client[, c(8, 10, 12)]
+tickets <- scale(tickets)
 ```
 
 
@@ -679,7 +684,7 @@ A continuació, es mostra com determinar el nombre òptim de particions per al m
 
 ```{r dpi=300, message=FALSE, warning=FALSE}
 # Mètode elbow
-fviz_nbclust(tickets_client, kmeans, method = "wss") +
+fviz_nbclust(tickets, kmeans, method = "wss") +
   geom_vline(xintercept = 4, linetype = 2) +
   labs(x = "Nombre de particions k", 
        y = "Total intra-clúster suma de quadrats",
@@ -693,7 +698,7 @@ fviz_nbclust(tickets_client, kmeans, method = "wss") +
   
 
 # Mètode Silhouette
-fviz_nbclust(tickets_client, kmeans, method = "silhouette") +
+fviz_nbclust(tickets, kmeans, method = "silhouette") +
   labs(x = "Nombre de particions k", 
        y = "Ample de la mitjana de la silueta",
        title = "Nombre òptim de particions", 
@@ -707,7 +712,7 @@ fviz_nbclust(tickets_client, kmeans, method = "silhouette") +
 
 # Mètode Gap
 set.seed(123)
-fviz_nbclust(tickets_client, kmeans, nstart = 25, 
+fviz_nbclust(tickets, kmeans, nstart = 25, 
              method = "gap_stat", nboot = 5) +
   labs(x = "Nombre de particions k", 
        y = "Valor de Gap (k)",
@@ -737,12 +742,20 @@ A causa de que, l´algoritme _k-means_ comença seleccionant un centroide aleat�
 aconseguir resultats reproduïbles. Així el lector d´aquest document obtindrà
 els mateixos resultats que es presenten tot seguit.
 
-A continuació es mostra com aplicar l´algorisme k-means amb k = 2:
+A continuació es mostra com aplicar l´algorisme k-means amb k = 4:
+
+```{r echo=FALSE}
+sample <- tickets_client %>% 
+                  ungroup() %>% 
+                  sample_frac(size = 0.05, replace = TRUE)
+tickets <- scale(sample[, c(8, 10, 12)])
+```
+
 
 ```{r}
 # Execució k-means amb k = 4
 set.seed(123)
-kmeansFit <- kmeans(tickets_client, 4, nstart = 25)
+kmeansFit <- kmeans(tickets, 4, nstart = 25)
 ```
 
 Podem mostrar per pantalla els resultats amb la següent línia de codi:
@@ -771,7 +784,7 @@ En aquest sentit, farem ús de la funció `fviz_cluster()` que ens permetrà vis
 
 ```{r dpi=300, fig.width=7, fig.height=7}
 # Visualitzem els clústers
-fviz_cluster(kmeansFit, data = tickets_client, stand = TRUE,
+fviz_cluster(kmeansFit, data = tickets, stand = TRUE,
     main = "Gràfic de clústers",
     palette = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
     ellipse.type = "euclid", 
@@ -787,10 +800,127 @@ Podem observar en el gràfic que les observacions són representades mitjançant
 diferenciar cada clúster.
 
 
-
-
-
 # PART III Classificació
+
+## El paquet Caret
+
+Per a la realització del model predictiu utilitzarem el paquet `caret`[^7] (acrònim per a
+__C__ lassification __A__ nd __RE__ gression __T__ raining). Aquest paquet es un 
+_framework_ amb un conjunt de funcions que pretén optimitzar el procés de la creació
+de models predictius. Aquest paquet conté eines per a:
+
+* Divisió del conjunt de dades.
+* Pre-processament de dades.
+* Selecció d´atributs.
+* _Model tunning_[^8] mitjançant remostreig.
+* Estimació de la importància de les variables.
+
+
+En primer lloc, caldrà instal·lar el paquet des del repositori CRAN:
+
+```{r eval=FALSE, message=FALSE, warning=FALSE}
+install.packages("caret", dependencies = TRUE)
+```
+
+A més, ens caldrà instal.lar els següents paquets:
+
+* El paquet `RWeka` que implementa l´algoritme C4.5.
+* El paquet `C50` es tracta d´una implementació més moderna de l´algorisme ID3.
+* El paquet `rpart` que implementa el mètode CART.
+* El paquet `randomForest` que implementa l´agoritme de "Boscos aleatoris"[^9].
+
+
+```{r eval=FALSE}
+install.packages(c("RWeka", "C50", "rpart", "randomForest"))
+```
+
+
+
+[^7]: Per a més informació: https://topepo.github.io/caret/index.html
+
+[^8]: Procés que consisteix en optimitzar els paràmetres del model amb l´objectiu 
+que l´algoritme obtingue el millor rendiment.
+
+[^9]: De l`anglés _Random Forest_. Per a més informació :https://es.wikipedia.org/wiki/Random_forest
+
+## Separació de dades: Conjunt d´entrenament i prova: 
+
+En aquest apartat, dividiren el conjunt de dades en dos subconjunts:
+
+* Conjunt d´entrenamet: Un subconjunt per a entrenar el model.
+* Conjunt de prova: Un subconjunt per a provar el model entrenat.
+  
+L´objectiu en aquesta tasca es dividir el conjunt de dades de la següent manera:
+
+![Figura 1. Divisió d´un conjunt de dades en un conjunt d´entrenament i un de prova.](img/PartitioDosConjunts.png)
+
+Cal que ens assegurem que el conjunt de prova reuneixi les següents dos condicions:
+
+* Que sigui prou gran com per generar resultats significatius des del punt de vista estadístic.
+* Que sigui representatiu de tot el conjunt de dades. En altres paraules, no triar un conjunt de prova amb característiques diferents al del conjunt d'entrenament.
+
+Si suposem que el conjunt de prova reuneix aquestes dues condicions, el nostre
+objectiu és crear un model que generalitzi les dades noves de forma correcta.
+En altres paraules, hem de aconseguir un model que no sobreajusti (en àngles, _overfitting_) les dades d'entrenament.
+
+
+La funció `createDataPartition` ens permetra crear els subconjunts de dades. 
+Per exemple, per a crear una divisió de un 80/20% del conjunt de dades `tickets_client`:
+
+```{r message=FALSE}
+# Carreguem el paquet
+library(caret)
+set.seed(1234)
+# Creem el conjunt d´entrenament i el de prova
+inTrain <- createDataPartition(tickets_client$FREQCOMPRA, p = 0.8, list = FALSE)
+training <- tickets_client[inTrain, ]
+testing <- tickets_client[-inTrain, ]
+```
+
+A continuació podem comprovar que hem obtingut un conjunt de entrenament de 2606
+observacions:
+
+```{r}
+dim(training)
+```
+
+## Classificació amb CART
+
+Tot seguit clasificarem de nou les dades d´entrenament, però aquest cop utilitzarem
+l´algoritme CART:
+
+```{r echo=FALSE, eval=FALSE}
+library(rpart)
+modelFitCART <- rpart(FREQCOMPRA ~ ., data = training, method = "class")
+```
+
+
+```{r eval=FALSE}
+# Carreguem el framework `caret`
+library(caret)
+# Execució  model CART
+modelFitCART <- train(FREQCOMPRA ~ .,
+                    data = training, 
+                    method = "rpart")
+                    
+```
+
+
+En aquet cas i amb l´ajuda del paquet `rattle` podem obtindre el gràfic de 
+l´arbre de decisió:
+
+```{r message=FALSE, eval=FALSE}
+# Carreguem la llibreria `rattle`
+library(rattle)
+# Obtenim un gràfic de l´arbre
+fancyRpartPlot(modelFitCART)
+```
+
+
+
+
+
+
 # PART IV Regles d´associació
 # PART V Conclusions i Recomanacions al Client
 
@@ -800,10 +930,6 @@ diferenciar cada clúster.
 
 
 
-
-[^1]: https://es.wikipedia.org/wiki/Markdown
-[^2]: https://www.rstudio.com/
-[^3]: https://rmarkdown.rstudio.com/
 
 
 
