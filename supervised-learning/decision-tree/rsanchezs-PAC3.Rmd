@@ -919,7 +919,7 @@ getModelPredictions <- function(Predictions) {
   rownames(values) = c("True +", "True -", "False +", "False -", "Accuracy", "Kappa")
   names(values) = names(Predictions)
   for (i in 1:ncol(Predictions)) {
-     tab = table(testing$income,Predictions[,i])
+     tab = table(testing$TIPUS,Predictions[,i])
      values[1,i] = tab[1,1]
      values[2,i] = tab[2,2]
      values[3,i] = tab[1,2]
