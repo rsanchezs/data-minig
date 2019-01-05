@@ -55,16 +55,16 @@ Hauríeu a més, d’adjuntar els fitxers originals quan les obres utilitzades s
 
 > Un altre punt a considerar és que qualsevol pràctica que faci ús de recursos protegits pel copyright no podrà en cap cas publicar-se en Mosaic, la revista del Graduat en Multimèdia de la UOC, llevat que els propietaris dels drets intel·lectuals donin la seva autorització explícita  
 
-
-
-# PART I Preparació de les Dades
-
-## Definició de la tasca de mineria de dades
+# INTRODUCCIO Definició de la Tasca de Mineria de Dades
 
 
 Aquesta pràctica tracta de plantejar com podria ser un projecte real de mineria de dades. Com a analistes de dades a partir de la presentació del client que exposa un problema de negoci difús i molt genèric haurem de reconduir-lo com a projecte de mineria de dades. 
 
 El client ens proporciona un conjunt de dades extretes del seu ERP, format per les següent taules: `cabeceraticket`, `client`, `familia`, `lineasticket`, `pais`, `pedido`, `producto`, `promocion`, `proveedor`, `regiongeografica`, `seccion`, `subfamilia`, `tienda`.
+
+Tot seguit es mostra el diagrama EER de la base de dades `gourmetDB`:
+
+![EER-GourmetDB](img/gourmetDB.pdf)
 
 Els objectius principals del projecte de mineria de dades seran els següents:
 
@@ -79,6 +79,12 @@ Trobar grups de clients semblants.
 > __SEGON OBJECTIU__
 >
 > Un cop separats els clients en diversos grups, volem saber quin és l´atribut que distingueix millor un grup de clients o l´altre.
+
+
+
+# PART I Preparació de les Dades
+
+## Definició de la tasca de mineria de dades
 
 
 
@@ -277,7 +283,7 @@ lapply(client, class)
 [^6]: La notació `paquet::nom_funció` s´utilitza per a indicar a R que es vol fer ús de la funció del paquet indicat, en el cas que existeixi ambigüitat amb el nom d´una funció en un altre paquet.
 
 
-Cal fer esment específic que sería pràctic convertir la variable `naixement` del tipus `numeric` a `date`:
+Cal fer esment específic que sería pràctic convertir la variable `DATANAIXEMENT` del tipus `numeric` a `date`:
 
 
 ```{r message=FALSE, warning=FALSE}
@@ -373,24 +379,6 @@ tickets_client <- tickets_client %>% select(-CODVENTA, -DATA,
 ```
 
 
-Com hem anteriorment sería convenient canviar els atributs de tipus `character` a `factor`, que és la manera que té R de tractar amb les variables de tipus categòric:
-
-
-```{r warning=FALSE, message=FALSE}
-# Carreguem ecosistema tidyverse
-if (!require("tidyverse")) {
-  # Instal.lació de la llibreria
-install.packages("tidyverse")
-# Carreguem la llibreria 
-library(tidyverse)
-}
-# Canviem les variables de tipus `character` a `factor`
-cols <- c('CODCLIENT', 'NOMCLIENT', 'GENERE', 'ESTATCIVIL', 'DIRECCIO',
-          'PROFESSIO', 'REGIO', 'NACIONALITAT')
-client <- mutate_at(client, cols, as.factor)
-```
-
-
 
 
 ### Reducció de la Dimensionalitat
@@ -427,10 +415,59 @@ dim(tickets_client)
 
 ### Identificació de _outliers_
 
-```{r}
+
+En aquest apartat identificarem els valors atípics (en angles, _outliers_). La identificació dels valors atipics es important perquè poden representar errors en  l´entrada de dades. A més, encara que el outlier sigui una dada valida, certs mètodes estadístics són sensibles a la presencia de valors extrems.
+
+
+Per a identificar els outliers de dades numeriques podem realitzar el _histograma_ de la variable. Tot seguit, es mostra el histograma del total de compres del nostre conjunt de dades.
+
+```{r dpi=300, fig.width = 10, fig.height = 6}
+tickets_client %>% ggplot(mapping = aes(x=TOTALCOMPRES)) + 
+               geom_histogram(binwidth = 1, aes(fill = ..count..) )
 
 ```
 
+Podem observar que existeixen un grup de valors solitaris al extrem dret de la cola de la distribució. Amb la finalitat de comprobar que es tracten de un valors atipics farem ús del mètode del _rang interquartilic_ (IQR) o sigui, calcularem la diferència entre el tercer quartil (Q3) i el primer (Q1):
+
+
+```{r}
+# Calculem els quartils
+quantile(tickets_client$TOTALCOMPRES)
+# Calculem el rang interquartilic
+IQR(tickets_client$TOTALCOMPRES)
+```
+
+
+>Si considerem que un valor és atípic quan es compleix que:
+>
+a) és menor que Q1 - 1.5(IQR) o,
+b) és major que Q3 + 1.5(IQR)
+
+
+LLavors tenim que en el conjunt de dades `tickets_client` existeixen 123 valors extrems:
+
+
+```{r}
+Q1 <- 5
+Q3 <- 12
+IQR <- 7
+tickets_client<- tickets_client %>% 
+          mutate(OUTLIER = case_when(TOTALCOMPRES < Q1 - 1.5*IQR ~ "OUTLIER",
+                                     TOTALCOMPRES > Q3 + 1.5*IQR ~ "OUTLIER", 
+                                     TRUE ~ as.character(TOTALCOMPRES)))
+
+table(tickets_client$OUTLIER)
+                              
+```
+
+
+Prenent en consideracio aquests resultats i per tal que els resultats dels nostres models no es vegin afectats, filtrarem aquestes observacions i les eliminarem del conjunt de dades `tickets_client`:
+
+```{r}
+# Filtrem per valors no atipics 
+tickets_client <- tickets_client %>% filter(OUTLIER != "OUTLIER")
+tickets_client$OUTLIER <- NULL
+```
 
 
 
@@ -457,7 +494,7 @@ tickets_client <- tickets_client %>% mutate_at(vars(NROFILLS, TOTALCOMPRES
 A banda d´això, per a facilitar el nostre anàlisi i en concret l´anàlisi exploratori de les dades, realitzarem una segmentació dels nostres clients respecte la freqüència de compra.
 
 Així, realitzarem una discretització utilitzant l´atribut `TOTALCOMPRES` que
-pren els valors entre 1 i 48 dividint els valors entre els conjunts: __FREQUENTE__, __HABITUAL__ i __OCASIONAL__.
+pren els valors entre 1 i 48 dividint els valors entre els conjunts: __FREQÜENT__, __HABITUAL__ i __OCASIONAL__.
 
 En primer lloc, hem de calcular la distribució de freqüencies absolutes de la variable
 `TOTALCOMPRES`:
@@ -484,19 +521,31 @@ freqüencia de compra:
 
 ```{r}
 tickets_client <- tickets_client %>% 
-        mutate(FREQCOMPRA = case_when(between(TOTALCOMPRES, 1, 5) ~ "OCASIONAL",
-                                  between(TOTALCOMPRES, 6, 21) ~ "FRECUENTE",
+        mutate(TIPUS = case_when(between(TOTALCOMPRES, 1, 5) ~ "OCASIONAL",
+                                  between(TOTALCOMPRES, 6, 21) ~ "FREQUENT",
                                   between(TOTALCOMPRES, 22, 48) ~ "HABITUAL" ))
 ```
 
 
+
+
+
+
 ## Anàlisi Exploratori de les Dades
 
-En primer lloc, passem a estudiar la variable `GENERE` respecte a `FREQCOMPRA`. Per tal d´explorar la relació entre aquestes variables realitzarem les següents operacions:
+El tema següent tracta de l´ànalisi exploratori de les dades (EDA), o anàlisi gràfic de les dades, EDA ens permetrà:
+
+* Analitzar amb profunditat el conjunt de dades.
+* Examinar la relació entre variables.
+* Identificar subconjunt d´observacions.
+* Desenvolupar una idea d´una possible associació entre les varibles predictores (independents) així com, entre les predictores i la variable de resposta (dependent).
+
+
+En primer lloc, passem a estudiar la variable `GENERE` respecte a `TIPUS`. Per tal d´explorar la relació entre aquestes variables realitzarem les següents operacions:
 
 - Agrupar el conjunt de dades per la variable `GENERE`.
-- Contar el nombre d´observacions de la variable `FREQCOMPRA` que apareixen en cada classe del atribut `GENERE`.
-- Calcular el percentatge en cada classe segons la variable `FREQCOMPRA`.
+- Contar el nombre d´observacions de la variable `TIPUS` que apareixen en cada classe del atribut `GENERE`.
+- Calcular el percentatge en cada classe segons la variable `TIPUS`.
 
 Totes aquestes operacions queden simplificades amb l´ajuda de les funcions `group_by` i `count` del paquet `dplyr`, i de l´operador ` %>% `:
 
@@ -505,9 +554,9 @@ Totes aquestes operacions queden simplificades amb l´ajuda de les funcions `gro
 # Gràfic barra genere vs freqüència compra
 tickets_client %>% 
   group_by(GENERE) %>% 
-   count(FREQCOMPRA) %>% 
+   count(TIPUS) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = GENERE, y = n, fill = FREQCOMPRA)) +
+    ggplot(mapping = aes(x = GENERE, y = n, fill = TIPUS)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 10, angle=45))
@@ -520,7 +569,7 @@ tickets_client %>%
 # Resúm de les dades
 tickets_client %>% 
   group_by(GENERE) %>% 
-  count(FREQCOMPRA) %>% 
+  count(TIPUS) %>% 
   mutate(FREQ = round(n / sum(n) * 100, 0)) 
 ```
 
@@ -534,9 +583,9 @@ En segon lloc, estudiarem la variable `ESTATCIVIL`. Realitzant els mateixos pass
 # Gràfic barra estat civil vs freqüència de compra
 tickets_client %>% 
   group_by(ESTATCIVIL) %>% 
-   count(FREQCOMPRA) %>% 
+   count(TIPUS) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = ESTATCIVIL, y = n, fill = FREQCOMPRA)) +
+    ggplot(mapping = aes(x = ESTATCIVIL, y = n, fill = TIPUS)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 14, angle=45))
@@ -552,9 +601,9 @@ Prosseguim el nostre anàlisi amb la variable `PROFESSIO`. Igual com hem fet ant
 # Gràfic barra professió vs freqüència de compra
 tickets_client %>% 
   group_by(PROFESSIO) %>% 
-   count(FREQCOMPRA) %>% 
+   count(TIPUS) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = PROFESSIO, y = n, fill = FREQCOMPRA)) +
+    ggplot(mapping = aes(x = PROFESSIO, y = n, fill = TIPUS)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 14, angle=90))
@@ -562,16 +611,16 @@ tickets_client %>%
 ```
 
 
-Avançant en el nostre anàlisi exploratori , passem a examinar la covariació entre les variables `REGIO` i `FREQCOMPRA`:
+Avançant en el nostre anàlisi exploratori , passem a examinar la covariació entre les variables `REGIO` i `TIPUS`:
 
 
 ```{r dpi=300, fig.width = 12, fig.height=8}
 # Gràfic barra regio vs freqüència de compra
 tickets_client %>% 
   group_by(REGIO) %>% 
-   count(FREQCOMPRA) %>% 
+   count(TIPUS) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = REGIO, y = n, fill = FREQCOMPRA)) +
+    ggplot(mapping = aes(x = REGIO, y = n, fill = TIPUS)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 14, angle=45))
@@ -582,21 +631,35 @@ tickets_client %>%
 
 Per acabar, analitzem la variable `NACIONALITAT`. El següent fragmet de codi ens
 mostra una representació gràfica en diagrama de barres apilat de la variable respecte
-a `FREQCOMPRA`:
+a `TIPUS`:
 
 
 ```{r dpi=300, fig.width = 12, fig.height=8}
 # Gràfic barra regio vs freqüència de compra
 tickets_client %>% 
   group_by(NACIONALITAT) %>% 
-   count(FREQCOMPRA) %>% 
+   count(TIPUS) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = NACIONALITAT, y = n, fill = FREQCOMPRA)) +
+    ggplot(mapping = aes(x = NACIONALITAT, y = n, fill = TIPUS)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 14, angle=45))
 
 ```
+
+Un altre punt important, sería estudiar si existeix correlació entre les variables de tipus .
+
+En primer lloc, passem a analitzar la 
+
+
+
+```{r}
+tickets_client %>% ggplot(mapping = aes(x=EDAT, y=TOTAL, color=GENERE)) +
+                geom_jitter(size=1, alpha=0.6) +
+                geom_smooth(method = lm, color="red", se= TRUE)
+  
+```
+
 
 
 # PART II Clustering
@@ -872,7 +935,7 @@ Per exemple, per a crear una divisió de un 80/20% del conjunt de dades `tickets
 library(caret)
 set.seed(1234)
 # Creem el conjunt d´entrenament i el de prova
-inTrain <- createDataPartition(tickets_client$FREQCOMPRA, p = 0.8, list = FALSE)
+inTrain <- createDataPartition(tickets_client$TIPUS, p = 0.8, list = FALSE)
 training <- tickets_client[inTrain, ]
 testing <- tickets_client[-inTrain, ]
 ```
@@ -891,7 +954,7 @@ l´algoritme CART:
 
 ```{r echo=FALSE, eval=FALSE}
 library(rpart)
-modelFitCART <- rpart(FREQCOMPRA ~ ., data = training, method = "class")
+modelFitCART <- rpart(TIPUS ~ ., data = training, method = "class")
 ```
 
 
@@ -899,7 +962,7 @@ modelFitCART <- rpart(FREQCOMPRA ~ ., data = training, method = "class")
 # Carreguem el framework `caret`
 library(caret)
 # Execució  model CART
-modelFitCART <- train(FREQCOMPRA ~ .,
+modelFitCART <- train(TIPUS ~ .,
                     data = training, 
                     method = "rpart")
                     
