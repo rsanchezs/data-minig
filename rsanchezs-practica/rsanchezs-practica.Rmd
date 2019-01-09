@@ -84,8 +84,6 @@ Trobar grups de clients semblants.
 
 # PART I Preparació de les Dades
 
-
-
 ## Pre-processament de les Dades
 
 ### Carrega i exàmen preliminar del conjunt de dades
@@ -176,6 +174,20 @@ colnames(ticket)
 
 
 
+Al següent fragment de codi eliminem els accents i la $ñ$ de les variables de tipus
+`character` dels _dataframes_ client i ticket:
+
+```{r}
+# Eliminem accents i la ñ
+client$NOMCLIENT <- chartr('áéíóúñ','aeioun', client$NOMCLIENT)
+client$DIRECCIO <- chartr('áéíóúñ','aeioun', client$DIRECCIO)
+client$PROFESSIO <- chartr('áéíóúñ','aeioun', client$PROFESSIO)
+client$REGIO <- chartr('áéíóúñ','aeioun', client$REGIO)
+client$NACIONALITAT <- chartr('áéíóúñ','aeioun', client$NACIONALITAT)
+ticket$NOMTENDA <- chartr('áéíóúñ','aeioun', ticket$NOMTENDA)
+ticket$FORMAPAGAMENT <- chartr('áéíóúñ','aeioun', ticket$FORMAPAGAMENT)
+```
+
 
 ### Exploració i Tractament de Valors Desconeguts
 
@@ -231,13 +243,20 @@ Pel que fa al conjunt de dades `ticket` realitzarem les mateixes tasques que hem
 colSums(is.na(ticket))
 ```
 
-Com es pot comprobar a l´anterior fragment de codi el conjunt de dades `ticket`  conté 38810 observacions amb valors desconeguts per a la variable `CODCLIENT`.
+Com es pot comprobar a l´anterior fragment de codi el conjunt de dades `ticket` conté 38810 observacions amb valors desconeguts per a la variable `CODCLIENT`.
 
 Aquest camp segons el model relacional de la base de dades correspon a la clau forana que relaciona amb la taula `cliente`. 
 
 Com a conseqüència, les observacions de la taula `cabeceraticket` que contenen un valor desconegut no poden ser combinades amb la taula `clientes`,  per això les eliminarem del conjunt de dades:
 
-```{r}
+```{r warning=FALSE, message=FALSE}
+# Carreguem la llibreria que ens permet importar arxius CSV
+if (!require("tidyverse")) {
+  # Instal.lació de la llibreria
+install.packages("tidyverse")
+# Carreguem la llibreria 
+library(tidyverse)
+}
 # Filtrem les observacions que contenen NA per a la variable CODCLIENT 
 # i modifiquem la taula ticket amb el resultat
 ticket <- ticket %>% filter(!is.na(ticket$CODCLIENT))
@@ -306,9 +325,9 @@ library(lubridate)
 client <- client %>% mutate_at("DATANAIXEMENT", funs(ymd))
 ```
 
-<a name="abcd">edat</a>
 
-Gràcies a l´anterior canvi de tipus podem calcular la <a name="edat">edat</a> del client i crear un nova columna que anomenarem `EDAT` amb el valor calculat de la següent manera:
+
+Gràcies a l´anterior canvi de tipus podem calcular la edat del client i crear un nova columna que anomenarem `EDAT` amb el valor calculat de la següent manera:
 
 
 ```{r}
@@ -381,42 +400,6 @@ tickets_client <- tickets_client %>% select(-CODVENTA, -DATA,
 
 
 
-
-### Reducció de la Dimensionalitat
-
-Per a la simplificació de l´anàlisi les següents variables són descartades:
-
-```{r}
-# Reducció de la dimensionalitat
-tickets_client$CODCLIENT <- NULL
-tickets_client$NOMCLIENT <- NULL
-tickets_client$DIRECCIO <- NULL
-tickets_client$DATANAIXEMENT <- NULL
-tickets_client$REGIO <- NULL
-```
-
-Els motius són els següents:
-
-* La variable `CODI` representa la clau primaria en la base de dades i no ens proporcionará informació per a estudiar millor les diferències entre grups.
-
-* La variable `NOM` pot ser el.liminada pel fet que, es tracta del nom del individu i que té funcions de particularització o individualització i no ens serveix per a les tasques d´agrupació i classificació.
-
-* La variable `DIRECCIO` es tracta de la direcció del domicili del client i no ens proporciona informació rellevant per a la nostra anàlisi.
-
-* La variable `DATANAIXEMENT` pot ser eliminada, ja que representa la data de naixement del client i no proporciona informació per al nostre model. No obstant, la edat del client es una característica peculiar i es pot estimar a partir de la data de naixement i la data actual.  Aquest atribut ja ha sigut calculat i representat amb la variable `EDAT`.
-
-* Per últim, també eliminarem les variables de `REGIO` perquè tan sols tenim 15 botigues, repartides en 2 continents i l'extrapolació de resultats a zones geogràfiques seria immediata i trivial.
-
-
-Recollint tot el que s´ha realitzat, tenim 11 atributs per a la nostra anàlisi i 923 observacions en el conjunt de dades `client`:
-
-```{r}
-# Obtenim el nom de les variables
-colnames(tickets_client)
-# Obtenim la dimensió
-dim(tickets_client)
-```
-
 ### Identificació d'Etiquetes Errònies en Variables Categòriques
 
 
@@ -427,7 +410,6 @@ En aquest apartat analitzarem les diferents etiquetes per a les variables categ�
 ```{r}
 tickets_client %>% group_by(GENERE) %>% 
               count()
-              
 ```
 
 
@@ -450,7 +432,8 @@ Per altra banda, observem que la variable `PROFESSIO` conté 10 classes:
 levels(tickets_client$PROFESSIO)
 ```
 
-Amb la intenció de simplificar el nostre model, reduirem el nombre de classes i agruparem `Food`, `Catering` i `Alimentación` en una sola variable atès que sembla
+
+Amb la intenció de simplificar el nostre model, reduirem el nombre de classes i agruparem `Food`, `Catering` i `Alimentacion` en una sola variable atès que sembla
 que representen una mateixa categoria:
 
 ```{r}
@@ -507,8 +490,8 @@ LLavors tenim que en el conjunt de dades `tickets_client` existeixen 42 valors e
 
 
 ```{r}
-Q1 <- 5
-Q3 <- 12
+Q1 <- 4
+Q3 <- 11
 IQR <- 7
 tickets_client<- tickets_client %>% 
           mutate(OUTLIER = case_when(TOTALCOMPRES < Q1 - 1.5*IQR ~ "OUTLIER",
@@ -541,7 +524,7 @@ tickets_client %>% ggplot(mapping = aes(x=EDAT)) +
 
 ```
 
-Com es pot observar en el gràfic existeixen valors per damunt de 100 anys. Podem comprovar-ho amb la següent línia de codi
+Com es pot observar en el gràfic existeixen valors per damunt de 100 anys. Podem comprovar-ho amb la següent línia de codi:
 
 ```{r}
 # Rang variable edat
@@ -596,10 +579,11 @@ tickets_client <- tickets_client %>% mutate_at(vars(NROFILLS, TOTALCOMPRES
 ```
 
 
+
 A banda d´això, per a facilitar el nostre anàlisi, realitzarem una segmentació dels nostres clients respecte la freqüència de compra.
 
 Així, realitzarem una discretització utilitzant l´atribut `TOTALCOMPRES` que
-pren els valors entre 1 i 48 dividint els valors entre els conjunts: __FREQÜENT__, __HABITUAL__ i __OCASIONAL__.
+pren els valors entre 1 i 21 dividint els valors entre els conjunts: __FREQÜENT__, __HABITUAL__ i __OCASIONAL__.
 
 
 1. __Clients freqüents:__ és molt important cuidar molt especialment als clients de compra freqüent i donar-los un tracte preferencial que els faci sentir-se valorats i mantenir d'aquesta forma el seu nivell de compres.
@@ -613,7 +597,7 @@ En primer lloc, hem de calcular la distribució de freqüencies absolutes de la 
 
 ```{r}
 total_compres <- tickets_client$TOTALCOMPRES
-breaks <- seq(1, 48, by = 5)
+breaks <- seq(1, 21, by = 5)
 total_compres_cut <- cut(total_compres, breaks, by = 5, right = FALSE)
 total_compres_freq <- table(total_compres_cut)
 ```
@@ -632,12 +616,12 @@ freqüencia de compra:
 
 ```{r}
 tickets_client <- tickets_client %>% 
-        mutate(TIPUS = case_when(between(TOTALCOMPRES, 1, 5) ~ "OCASIONAL",
-                                  between(TOTALCOMPRES, 6, 16) ~ "FREQUENT",
-                                  between(TOTALCOMPRES, 17, 48) ~ "HABITUAL" ))
+        mutate(FREQCOMPRA = case_when(between(TOTALCOMPRES, 1, 6) ~ "OCASIONAL",
+                                  between(TOTALCOMPRES, 7, 16) ~ "FREQUENT",
+                                  between(TOTALCOMPRES, 17, 21) ~ "HABITUAL" ))
 
 # Canviem la variable de tipus `character` a `factor`
-tickets_client$TIPUS <- as.factor(tickets_client$TIPUS)
+tickets_client$FREQCOMPRA <- as.factor(tickets_client$FREQCOMPRA)
 ```
 
 
@@ -652,7 +636,66 @@ Per altra banda, classificarem els nostres clients segons el __volum de ventes__
 4. __Clients Baixos:__ són aquells les vendes dels quals estan molt per sota de la mitjana.
 
 
+En primer lloc, calculem un resúm estadístic de la variable `TOTAL` per tal d´agrupar els nostres
+clientes respecte la mitjana:
 
+
+```{r}
+summary(tickets_client$TOTAL)
+```
+
+
+
+Finalment, creem una nova variable que classificarà els nostres clients segons el volúm de venda:
+
+
+
+```{r}
+tickets_client <- tickets_client %>% 
+        mutate(VOLUMVENTA = case_when(between(TOTAL, 1, 95) ~ "BAIX",
+                                  between(TOTAL, 95, 370) ~ "MITJA",
+                                  between(TOTAL, 370, 3000) ~ "ALT" ))
+
+# Canviem la variable de tipus `character` a `factor`
+tickets_client$FREQCOMPRA <- as.factor(tickets_client$VOLUMVENTA)
+```
+
+
+
+### Reducció de la Dimensionalitat
+
+Per a la simplificació de l´anàlisi les següents variables són descartades:
+
+```{r}
+# Reducció de la dimensionalitat
+#tickets_client$CODCLIENT <- NULL
+tickets_client$NOMCLIENT <- NULL
+tickets_client$DIRECCIO <- NULL
+tickets_client$DATANAIXEMENT <- NULL
+#tickets_client$REGIO <- NULL
+```
+
+Els motius són els següents:
+
+* La variable `CODI` representa la clau primaria en la base de dades i no ens proporcionará informació per a estudiar millor les diferències entre grups.
+
+* La variable `NOM` pot ser el.liminada pel fet que, es tracta del nom del individu i que té funcions de particularització o individualització i no ens serveix per a les tasques d´agrupació i classificació.
+
+* La variable `DIRECCIO` es tracta de la direcció del domicili del client i no ens proporciona informació rellevant per a la nostra anàlisi.
+
+* La variable `DATANAIXEMENT` pot ser eliminada, ja que representa la data de naixement del client i no proporciona informació per al nostre model. No obstant, la edat del client es una característica peculiar i es pot estimar a partir de la data de naixement i la data actual.  Aquest atribut ja ha sigut calculat i representat amb la variable `EDAT`.
+
+* Per últim, també eliminarem les variables de `REGIO` perquè tan sols tenim 15 botigues, repartides en 2 continents i l'extrapolació de resultats a zones geogràfiques seria immediata i trivial.
+
+
+Recollint tot el que s´ha realitzat, tenim 10 atributs per a la nostra anàlisi i 3083 observacions en el conjunt de dades `client`:
+
+```{r}
+# Obtenim el nom de les variables
+colnames(tickets_client)
+# Obtenim la dimensió
+dim(tickets_client)
+```
 
 ## Anàlisi Exploratori de les Dades
 
@@ -664,11 +707,11 @@ El tema següent tracta de l´ànalisi exploratori de les dades (EDA), o anàlis
 * Desenvolupar una idea d´una possible associació entre les varibles predictores (independents) així com, entre les predictores i la variable de resposta (dependent).
 
 
-En primer lloc, passem a estudiar la variable `GENERE` respecte a `TIPUS`. Per tal d´explorar la relació entre aquestes variables realitzarem les següents operacions:
+En primer lloc, passem a estudiar la variable `GENERE` respecte a `FREQCOMPRA`. Per tal d´explorar la relació entre aquestes variables realitzarem les següents operacions:
 
 - Agrupar el conjunt de dades per la variable `GENERE`.
-- Contar el nombre d´observacions de la variable `TIPUS` que apareixen en cada classe del atribut `GENERE`.
-- Calcular el percentatge en cada classe segons la variable `TIPUS`.
+- Contar el nombre d´observacions de la variable `FREQCOMPRA` que apareixen en cada classe del atribut `GENERE`.
+- Calcular el percentatge en cada classe segons la variable `FREQCOMPRA`.
 
 Totes aquestes operacions queden simplificades amb l´ajuda de les funcions `group_by` i `count` del paquet `dplyr`, i de l´operador ` %>% `:
 
@@ -678,12 +721,12 @@ Totes aquestes operacions queden simplificades amb l´ajuda de les funcions `gro
 # Gràfic barra genere vs freqüència de compra
 tickets_client %>% 
   group_by(GENERE) %>% 
-   count(TIPUS) %>% 
+   count(FREQCOMPRA) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping =  aes(y = n, x = GENERE, color=TIPUS, fill=TIPUS)) + 
+    ggplot(mapping =  aes(y = n, x = GENERE, color=FREQCOMPRA, fill=FREQCOMPRA)) + 
     geom_bar( stat="identity") + 
     geom_text(aes(label = paste(freq, "%")), color="black") +
-    facet_wrap(~TIPUS)
+    facet_wrap(~FREQCOMPRA)
 ```
 
 
@@ -693,7 +736,7 @@ tickets_client %>%
 # Resúm de les dades
 tickets_client %>% 
   group_by(GENERE) %>% 
-  count(TIPUS) %>% 
+  count(FREQCOMPRA) %>% 
   mutate(FREQ = round(n / sum(n) * 100, 0)) %>% 
   arrange(desc(FREQ))
 ```
@@ -707,13 +750,13 @@ En segon lloc, estudiarem la variable `ESTATCIVIL`. Realitzant els mateixos pass
 # Gràfic barra estat civil vs freqüència de compra
 tickets_client %>% 
   group_by(ESTATCIVIL) %>% 
-   count(TIPUS) %>% 
+   count(FREQCOMPRA) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = ESTATCIVIL, y = n, fill = TIPUS)) +
+    ggplot(mapping = aes(x = ESTATCIVIL, y = n, fill = FREQCOMPRA)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 12, angle=90)) + 
-    facet_wrap(~TIPUS)
+    facet_wrap(~FREQCOMPRA)
   
 
 ```
@@ -727,31 +770,31 @@ Prosseguim el nostre anàlisi amb la variable `PROFESSIO`. Igual com hem fet ant
 # Gràfic barra professió vs freqüència de compra
 tickets_client %>% 
   group_by(PROFESSIO) %>% 
-   count(TIPUS) %>% 
+   count(FREQCOMPRA) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = PROFESSIO, y = n, fill = TIPUS)) +
+    ggplot(mapping = aes(x = PROFESSIO, y = n, fill = FREQCOMPRA)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 14, angle=90)) +
-    facet_wrap(~TIPUS)
+    facet_wrap(~FREQCOMPRA)
 
 ```
 
 
-Avançant en el nostre anàlisi exploratori , passem a examinar el percentatge de variació entre les variables `REGIO` i `TIPUS`:
+Avançant en el nostre anàlisi exploratori , passem a examinar el percentatge de variació entre les variables `REGIO` i `FREQCOMPRA`:
 
 
 ```{r dpi=300, fig.width = 12, fig.height=8}
 # Gràfic barra regio vs freqüència de compra
 tickets_client %>% 
   group_by(REGIO) %>% 
-   count(TIPUS) %>% 
+   count(FREQCOMPRA) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = REGIO, y = n, fill = TIPUS)) +
+    ggplot(mapping = aes(x = REGIO, y = n, fill = FREQCOMPRA)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 14, angle=45)) +
-    facet_wrap(~TIPUS)
+    facet_wrap(~FREQCOMPRA)
 
 ```
 
@@ -759,20 +802,20 @@ tickets_client %>%
 
 Per acabar, analitzem la variable `NACIONALITAT`. El següent fragmet de codi ens
 mostra una representació gràfica en diagrama de barres de la variable respecte
-a `TIPUS`:
+a `FREQCOMPRA`:
 
 
 ```{r dpi=300, fig.width = 12, fig.height=8}
 # Gràfic barra regio vs freqüència de compra
 tickets_client %>% 
   group_by(NACIONALITAT) %>% 
-   count(TIPUS) %>% 
+   count(FREQCOMPRA) %>% 
     mutate(freq = round(n / sum(n) * 100, 0)) %>% 
-    ggplot(mapping = aes(x = NACIONALITAT, y = n, fill = TIPUS)) +
+    ggplot(mapping = aes(x = NACIONALITAT, y = n, fill = FREQCOMPRA)) +
     geom_bar(stat = "identity") +
     geom_text(aes(label = paste(freq, "%"))) +
     theme(axis.text.x = element_text (size = 14, angle=45)) +
-    facet_wrap(~TIPUS)
+    facet_wrap(~FREQCOMPRA)
 
 ```
 
@@ -856,20 +899,30 @@ on els arguments són els següents:
 
 Per al nostre anàlisi de la segmentació dels nostres clients utilitzarem el següent conjunt de prova:
 
+```{r}
+set.seed(123)
+inTrain <- ungroup(tickets_client) %>% 
+          sample_frac(0.5, replace = TRUE)
+training <- scale(inTrain[, c(8, 10, 12)])
+```
 
-```{r echo=FALSE}
-tickets <- tickets_client[, c(8, 10, 12)]
-tickets <- scale(tickets)
+
+A continuació podem comprovar que hem obtingut un conjunt de entrenament de 1542
+observacions:
+
+
+```{r}
+dim(training)
 ```
 
 
 
-A continuació, es mostra com determinar el nombre òptim de particions per al mètode **_k-means_**:
+Tot seguit, es mostra com determinar el nombre òptim de particions per al mètode **_k-means_**:
 
 
 ```{r dpi=300, message=FALSE, warning=FALSE}
 # Mètode elbow
-fviz_nbclust(tickets, kmeans, method = "wss") +
+fviz_nbclust(training, kmeans, method = "wss") +
   geom_vline(xintercept = 4, linetype = 2) +
   labs(x = "Nombre de particions k", 
        y = "Total intra-clúster suma de quadrats",
@@ -879,42 +932,12 @@ fviz_nbclust(tickets, kmeans, method = "wss") +
   theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
          plot.subtitle = element_text(color="#4F81BD", size=14))
   
-       
-  
-
-# Mètode Silhouette
-fviz_nbclust(tickets, kmeans, method = "silhouette") +
-  labs(x = "Nombre de particions k", 
-       y = "Ample de la mitjana de la silueta",
-       title = "Nombre òptim de particions", 
-       subtitle = "Mètode Silhouette") +
-  theme_classic() +
-  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
-        plot.subtitle = element_text(color="#4F81BD", size=14))
-  
-
-
-
-# Mètode Gap
-set.seed(123)
-fviz_nbclust(tickets, kmeans, nstart = 25, 
-             method = "gap_stat", nboot = 5) +
-  labs(x = "Nombre de particions k", 
-       y = "Valor de Gap (k)",
-       title = "Nombre òptim de particions",
-       subtitle = "Mètode Gap") +
-  theme_classic() +
-  theme(plot.title = element_text(color="#4F81BD", size=14, face="bold"),
-        plot.subtitle = element_text(color="#4F81BD", size=14))
-  
-  
+      
 ```
 
 >Com podem observar en els gràfics:
 >
 * El mètode Elbow ens suggereix 4 clústers.
-* El mètode Silhoutte ens suggereix 2 clústers.
-* El mètode Gap ens sugereix 4 clústers.
 
 
 
@@ -927,20 +950,14 @@ A causa de que, l´algoritme _k-means_ comença seleccionant un centroide aleat�
 aconseguir resultats reproduïbles. Així el lector d´aquest document obtindrà
 els mateixos resultats que es presenten tot seguit.
 
-A continuació es mostra com aplicar l´algorisme k-means amb k = 4:
 
-```{r echo=FALSE}
-sample <- tickets_client %>% 
-                  ungroup() %>% 
-                  sample_frac(size = 0.05, replace = TRUE)
-tickets <- scale(sample[, c(8, 10, 12)])
-```
+A continuació es mostra com aplicar l´algorisme k-means amb k = 4:
 
 
 ```{r}
 # Execució k-means amb k = 4
 set.seed(123)
-kmeansFit <- kmeans(tickets, 4, nstart = 25)
+kmeansFit <- kmeans(training, 4, nstart = 25)
 ```
 
 Podem mostrar per pantalla els resultats amb la següent línia de codi:
@@ -952,6 +969,7 @@ print(kmeansFit)
 
 > Podem observar en la sortida el següent:
 >
+* Que s´han creat 4 clusters de 191, 384, 444 i 523.
 * La mitjana de clústers: una matriu, on les files són el nombre de clúster i
 les columnes són les variables.
 * El vector de particions: un vector d´enters (de 1:k) que indica el clúster on
@@ -969,7 +987,8 @@ En aquest sentit, farem ús de la funció `fviz_cluster()` que ens permetrà vis
 
 ```{r dpi=300, fig.width=7, fig.height=7}
 # Visualitzem els clústers
-fviz_cluster(kmeansFit, data = tickets, stand = TRUE,
+fviz_cluster(kmeansFit, data = training, stand = TRUE,
+    geom = "point",
     main = "Gràfic de clústers",
     palette = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
     ellipse.type = "euclid", 
@@ -1020,6 +1039,15 @@ install.packages(c("RWeka", "C50", "rpart", "randomForest"))
 ```
 
 
+Un cop instal.lats el paquets el carregarem a la sessió R mitjançant la següent línia de codi:
+
+```{r message=FALSE, warning=FALSE}
+# Carrega de caret
+library(caret)
+# Carrega C50
+library(C50)
+```
+
 
 [^7]: Per a més informació: https://topepo.github.io/caret/index.html
 
@@ -1049,6 +1077,22 @@ objectiu és crear un model que generalitzi les dades noves de forma correcta.
 En altres paraules, hem de aconseguir un model que no sobreajusti (en àngles, _overfitting_) les dades d'entrenament.
 
 
+En primer lloc, eliminarem aquells atributs que no son rellevants per a la nostra classificació:
+
+```{r}
+# Eliminem atributs innecessaris
+# tickets_client$CODCLIENT <- NULL
+# tickets_client$REGIO <- NULL
+# tickets_client$TOTALCOMPRES <- NULL
+# tickets_client$NROFILLS <- NULL
+# tickets_client$TOTAL <- NULL
+# tickets_client$PUNTSACUMULATS <- NULL
+# tickets_client$NOMTENDA <- NULL
+# tickets_client$EDAT <- NULL
+#tickets_client$FREQCOMPRA <- NULL
+```
+
+
 La funció `createDataPartition` ens permetra crear els subconjunts de dades. 
 Per exemple, per a crear una divisió de un 80/20% del conjunt de dades `tickets_client`:
 
@@ -1057,7 +1101,7 @@ Per exemple, per a crear una divisió de un 80/20% del conjunt de dades `tickets
 library(caret)
 set.seed(1234)
 # Creem el conjunt d´entrenament i el de prova
-inTrain <- createDataPartition(tickets_client$TIPUS, p = 0.8, list = FALSE)
+inTrain <- createDataPartition(tickets_client$VOLUMVENTA, p = 0.8, list = FALSE)
 training <- tickets_client[inTrain, ]
 testing <- tickets_client[-inTrain, ]
 ```
@@ -1078,10 +1122,11 @@ N´és un bon exemple el fragment de codi següent que utilitza l´algorisme C50
 
 ```{r warning=FALSE, message=FALSE}
 # Execució l´algoritme C50
-modelFitC50tree <- train(TIPUS ~ ., 
+modelFitC50tree <- train(VOLUMVENTA ~ ., 
                    method = "C5.0", 
                    data = training)
 ```
+
 
 
 Tot seguit es mostra la matriu de confusió:
@@ -1091,156 +1136,19 @@ Tot seguit es mostra la matriu de confusió:
 summary(modelFitC50tree)
 ```
 
-A continuació classificarem el conjunt de prova i assignarem les mesures d´avaluació 
-del model com un nou atribut al _dataframe_ `Predictions`:
-
 ```{r}
-# Obtenim les messures d´avaluació amb el conjunt de prova
-Predictions = data.frame(matrix(nrow = nrow(testing), ncol = 0))
-Predictions$C5.0 = predict(modelFitC50tree, testing)
+modelFitC50tree
 ```
 
+
+```{r}
+plot(modelFitC50tree)
+```
 
 
 
 
 [^20]: Informació extreta de https://es.wikipedia.org/wiki/Boosting
-
-## Classificació amb CART
-
-Tot seguit clasificarem de nou les dades d´entrenament, però aquest cop utilitzarem
-l´algoritme CART:
-
-```{r echo=FALSE}
-library(rpart)
-modelFitCART <- rpart(TIPUS ~ ., data = training, method = "class")
-```
-
-
-```{r eval=FALSE}
-# Carreguem el framework `caret`
-library(caret)
-# Execució  model CART
-modelFitCART <- train(TIPUS ~ .,
-                    data = training, 
-                    method = "rpart")
-                    
-```
-
-```{r}
-summary(modelFitCART)
-```
-
-
-
-
-En aquet cas i amb l´ajuda del paquet `rattle` podem obtindre el gràfic de 
-l´arbre de decisió:
-
-```{r message=FALSE, eval=FALSE}
-# Carreguem la llibreria `rattle`
-library(rattle)
-# Obtenim un gràfic de l´arbre
-fancyRpartPlot(modelFitCART)
-```
-
-Finalment, obtenim els indicadors de rendiment del model amb el conjunt de prova i els guardem al dataframe `Predictions`:
-
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-library(psych)
-ProbsCART = predict(modelFitCART, training)
-PredictCART = rep(0, nrow(ProbsCART))
-PredictCART[ProbsCART[,1] <=.5] = "small"
-PredictCART[ProbsCART[,1] >.5] = "large"
-TabCART = table(training$TIPUS, PredictCART)
-cohen_kappa <- cohen.kappa(TabCART)
-```
-
-```{r}
-# Obtenim les mesures d´avaluació  amb el conjunt de prova
-ProbsCARTtest = predict(modelFitCART, testing)
-Predictions$CART[ProbsCARTtest[,1] <=.5] = "small"
-Predictions$CART[ProbsCARTtest[,1] >.5] = "large"
-```
-
-
-### Random Forest
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-library(randomForest)
-modelFitRandomForest <- randomForest(y = training$TIPUS,
-                                     x = training[, -4])
-```
-
-Per acabar, en aquest apartat classificarem de nou el conjunt de dades  
-d´entrenament, però en aquest aquest utilitzarem el algoritme  _Random Forest_:
-
-```{r eval=FALSE}
-# Carreguem el framework `caret`
-library(caret)
-# Executem l´algoritme random forest
-modelFitRandomForest <- train(income ~ ., 
-                              data = training, 
-                              method = "rf", prox=TRUE)
-```
-
-A continuació es mostra la matriu de confusió:
-
-```{r}
-# Mostrem la matriu de confusió
-modelFitRandomForest
-```
-
-Com podem observar en els resultats aquesta classificació es pitjor encara que amb CART.
-
-Per concloure, de forma similiar als apartats anteriors obtenim els valors de les mesures d´avaluació del model:
-
-```{r}
-# Obtenim les mètriques d´avaluació del model amb el conjunt de proves
-Predictions$RF = predict(modelFitRandomForest, testing)
-```
-
-### Anàlisis de les prediccions del conjunt de prova
-
-Amb la següent funció obtindrem les diferents mesures d´avaluació dels models 
-estudiats en aquest text. Així com, un resúm en forma de taula de les diferents
-mètriques obtingudes per a cada algoritme:
-
-```{r}
-# Funció per a obtindre un resum amb les mesures d´avaluació dels models
-getModelPredictions <- function(Predictions) {
-  values = data.frame(matrix(ncol = ncol(Predictions), nrow = 6))
-  rownames(values) = c("True +", "True -", "False +", "False -", "Accuracy", "Kappa")
-  names(values) = names(Predictions)
-  for (i in 1:ncol(Predictions)) {
-     tab = table(testing$income,Predictions[,i])
-     values[1,i] = tab[1,1]
-     values[2,i] = tab[2,2]
-     values[3,i] = tab[1,2]
-     values[4,i] = tab[2,1]
-     values[5,i] = sum(diag(tab))/sum(tab)
-     values[6,i] = cohen.kappa(tab)[1] 
-  }
-  round(values,2)
-}
-```
-
-A continuació, es mostra la taula amb les mesures d´avaluació dels diferents models
-analitzats en la pràctica:
-
-```{r collapse=FALSE}
-# Mostrem en un dataframe les mesures d´avaluació
-getModelPredictions(Predictions)
-```
-
-
-
-Per concloure, encara que els algoritmes han superat el 70% de precisió en la
-classificació, el valor estadístic _kappa_ no ha superat el 0.44. Aquest valor
-no és suficient, de manera que seria recomanable no utilitzar cap d'aquests algoritmes per a la predicció del model.
-
-
 
 
 # PART IV Regles d´associació
